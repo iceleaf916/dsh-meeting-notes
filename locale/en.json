@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Meeting Notes",
+    "description": "Record and transcribe meetings locally: capture system audio plus microphone, transcribe offline with SenseVoiceSmall (INT8), get live or after-the-fact transcripts, and turn any meeting into a workspace session with an AI summary."
+  }
+}

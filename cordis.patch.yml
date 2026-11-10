@@ -1,0 +1,9 @@
+- insert:
+    - id: dsh-meeting-notes
+      name: '@local/dsh-meeting-notes'
+      config:
+        storageDir: '~/dsh-meetings'
+        transcribeMode: after
+        language: zh
+        # 录音默认混合「系统音频 + 麦克风」；存储目录、模式、语言、采集源、
+        # 分块秒数都可以在插件页面里修改，无需改这里的 YAML。

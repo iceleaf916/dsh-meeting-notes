@@ -1,0 +1,14 @@
+# 依赖
+node_modules/
+
+# Swift 辅助程序的构建产物
+.build/
+recorder/.build/
+
+# 本机录音/转写测试残留
+test-*.pcm
+test-*.wav
+
+# 系统文件
+.DS_Store
+*.log
