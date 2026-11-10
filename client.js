@@ -23,7 +23,6 @@ window.__ModuleLoader__.load({
       platformUnsupported: '当前平台暂不支持录制系统声音与麦克风，只能浏览已有会议。',
       modelLabel: '识别模型',
       prepare: '下载模型',
-      prepareBusy: '准备中…',
       prepareRetry: '重新准备',
       prepareStarted: '已开始准备本地模型，进度见模型状态。',
       phaseUnprepared: '未准备',
@@ -130,17 +129,79 @@ window.__ModuleLoader__.load({
       sseGaveUp: '实时通道已断开，已切换为定时刷新。',
       transcribingHint: '转写进行中，完成后文稿会自动出现。',
       settings: '设置',
-      settingsSubtitle: '录音存储、识别语言与采集方式',
+      settingsSubtitle: '识别模型、录音存储、语言与采集方式',
       closeDialog: '关闭',
       dialogCancel: '取消',
       sectionStorage: '存储',
       sectionRecognition: '识别',
       sectionCapture: '采集',
+      sectionModels: '识别模型',
       storageHint: '每场会议一个子文件夹，存放录音 WAV、转写与纪要。',
       captureHint: '默认同时采集系统声音与麦克风，录音中不可更改。',
       modeHintAfter: '结束后转写：停止录音后整段识别，速度更快。',
       modeHintRealtime: '实时转写：录音时持续显示字幕，占用略高。',
       unsavedHint: '有未保存的修改',
+      modelSectionNote: '需先下载到本机才能离线转写',
+      modelEmpty: '没有检测到可用的本地语音识别服务，请确认 DSH 语音输入插件已开启。',
+      modelsHint: '模型列表来自 DSH 语音服务：目前内置 SenseVoice，后续接入其他 ASR 模型会自动出现在这里。',
+      modelCurrent: '当前使用',
+      useModel: '使用该模型',
+      modelSelected: '已切换识别模型',
+      modelDownload: '下载并准备',
+      modelRetry: '重试准备',
+      modelCancel: '取消准备',
+      modelCancelled: '已取消模型准备',
+      modelPreparing: '正在准备模型，进度见上方状态。',
+      modelSteps: '准备步骤',
+      modelNotReady: '实时转写需要先准备好本地模型。',
+      modelNotReadySettings: '去设置准备',
+      stepCheck: '检查本地资源',
+      stepModel: '准备语音识别模型',
+      stepVad: '准备语音检测模型',
+      stepVerify: '校验模型文件',
+      stepLoad: '加载模型',
+      stepPending: '未开始',
+      stepRunning: '进行中',
+      stepComplete: '已完成',
+      stepFailed: '失败',
+      stepCancelled: '已取消',
+      downloadProgress: '下载进度',
+      downloadBytes: '下载：{completed} / {total} MB，{percent}%',
+      downloadUnknown: '已下载 {completed} MB',
+      preparationFailed: '准备失败：{message}',
+      downloadSource: '模型下载源',
+      sourceAuto: '自动选择（推荐）',
+      sourceHuggingFace: 'Hugging Face',
+      sourceMirror: 'HF-Mirror（国内镜像）',
+      sourceModelscope: 'ModelScope（国内推荐）',
+      modelRealtimeHint: '该模型实时转写延迟较高，建议使用「结束后转写」。',
+      modelRealtimeWarn: '当前模型实时转写延迟较高，录音不受影响，建议会后转写。',
+      sourceAutoHelp: '优先使用响应较快的源，下载失败时自动尝试其他源。',
+      sourceManualHelp: '仅从所选源下载；已下载并通过校验的文件会复用。',
+      estimateDisk: '硬盘占用约 {gb} GB',
+      estimateMemory: '运行时内存约 {gb} GB',
+      estimateTime: '首次准备约 {min}–{max} 分钟',
+      phaseUnprepare: '未准备',
+      phaseWaking: '唤醒中',
+      phaseCancelling: '取消中',
+      phaseCancelled: '已取消',
+      downloadReason: '下载失败：{reason}',
+      reasonNetwork: '网络连接异常',
+      reasonDns: '域名解析失败',
+      reasonTimeout: '下载超时',
+      reasonCertificate: '证书校验失败',
+      reasonHttp: '下载服务器返回错误',
+      reasonIntegrity: '模型文件校验失败',
+      reasonStorage: '磁盘空间不足或不可写',
+      reasonUnknown: '未知原因',
+      adviceNetwork: '请检查网络连接后重试，或切换下载源。',
+      adviceDns: '请确认网络可访问所选下载源，或切换下载源。',
+      adviceTimeout: '网络较慢，可切换下载源后重试。',
+      adviceCertificate: '系统时间或代理证书可能异常，请检查后重试。',
+      adviceHttp: '下载源暂时不可用，请稍后重试或切换下载源。',
+      adviceIntegrity: '已下载文件不完整，请重试；多次失败请切换下载源。',
+      adviceStorage: '请清理磁盘空间，或检查模型目录权限。',
+      adviceUnknown: '请稍后重试；若多次失败，请切换下载源。',
     };
 
     const DICT_EN = {
@@ -158,7 +219,6 @@ window.__ModuleLoader__.load({
       platformUnsupported: 'Recording system audio and microphone is not supported on this platform yet; browsing existing meetings still works.',
       modelLabel: 'Model',
       prepare: 'Download model',
-      prepareBusy: 'Preparing…',
       prepareRetry: 'Retry preparation',
       prepareStarted: 'Model preparation started; watch the model status.',
       phaseUnprepared: 'Not prepared',
@@ -265,17 +325,79 @@ window.__ModuleLoader__.load({
       sseGaveUp: 'The realtime channel closed; falling back to periodic refresh.',
       transcribingHint: 'Transcription in progress; the transcript appears when it finishes.',
       settings: 'Settings',
-      settingsSubtitle: 'Where recordings live, recognition language and capture sources',
+      settingsSubtitle: 'Recognition models, storage, language and capture sources',
       closeDialog: 'Close',
       dialogCancel: 'Cancel',
       sectionStorage: 'Storage',
       sectionRecognition: 'Recognition',
       sectionCapture: 'Capture',
+      sectionModels: 'Recognition models',
       storageHint: 'One folder per meeting, holding the WAV recording, transcript and minutes.',
       captureHint: 'System audio and microphone are captured together; change before recording.',
       modeHintAfter: 'Transcribe after stop: recognize the whole recording once, fastest.',
       modeHintRealtime: 'Realtime: subtitles stream while recording, slightly more CPU.',
       unsavedHint: 'Unsaved changes',
+      modelSectionNote: 'Downloaded locally before offline transcription',
+      modelEmpty: 'No local speech recognition service detected. Make sure the DSH voice input plugin is enabled.',
+      modelsHint: 'Models come from the DSH speech service: SenseVoice is built in, and future ASR providers appear here automatically.',
+      modelCurrent: 'In use',
+      useModel: 'Use this model',
+      modelSelected: 'Recognition model switched',
+      modelDownload: 'Download and prepare',
+      modelRetry: 'Retry preparation',
+      modelCancel: 'Cancel preparation',
+      modelCancelled: 'Model preparation cancelled',
+      modelPreparing: 'Preparing the model; watch the status above.',
+      modelSteps: 'Preparation steps',
+      modelNotReady: 'Realtime transcription needs a prepared local model.',
+      modelNotReadySettings: 'Prepare in settings',
+      stepCheck: 'Check local resources',
+      stepModel: 'Prepare speech recognition model',
+      stepVad: 'Prepare voice detection model',
+      stepVerify: 'Verify model files',
+      stepLoad: 'Load model',
+      stepPending: 'Not started',
+      stepRunning: 'In progress',
+      stepComplete: 'Completed',
+      stepFailed: 'Failed',
+      stepCancelled: 'Cancelled',
+      downloadProgress: 'Download progress',
+      downloadBytes: 'Downloading: {completed} / {total} MB, {percent}%',
+      downloadUnknown: 'Downloaded {completed} MB',
+      preparationFailed: 'Preparation failed: {message}',
+      downloadSource: 'Model download source',
+      sourceAuto: 'Automatic (recommended)',
+      sourceHuggingFace: 'Hugging Face',
+      sourceMirror: 'HF-Mirror (China mirror)',
+      sourceModelscope: 'ModelScope (China)',
+      modelRealtimeHint: 'Realtime transcription is slower on this model; prefer transcribing after recording.',
+      modelRealtimeWarn: 'This model is slow for realtime transcription. Recording still works; transcribing after the meeting is faster.',
+      sourceAutoHelp: 'Uses the faster source first and falls back to others on failure.',
+      sourceManualHelp: 'Downloads only from the selected source; already verified files are reused.',
+      estimateDisk: 'About {gb} GB on disk',
+      estimateMemory: 'About {gb} GB memory while running',
+      estimateTime: 'First preparation takes about {min}–{max} minutes',
+      phaseUnprepare: 'Not prepared',
+      phaseWaking: 'Waking up',
+      phaseCancelling: 'Cancelling',
+      phaseCancelled: 'Cancelled',
+      downloadReason: 'Download failed: {reason}',
+      reasonNetwork: 'network error',
+      reasonDns: 'DNS resolution failed',
+      reasonTimeout: 'download timed out',
+      reasonCertificate: 'certificate verification failed',
+      reasonHttp: 'download server returned an error',
+      reasonIntegrity: 'model file verification failed',
+      reasonStorage: 'insufficient disk space or not writable',
+      reasonUnknown: 'unknown reason',
+      adviceNetwork: 'Check the network and retry, or switch the download source.',
+      adviceDns: 'Make sure the selected source is reachable, or switch the download source.',
+      adviceTimeout: 'The network is slow; switch the download source and retry.',
+      adviceCertificate: 'Check the system clock or proxy certificate, then retry.',
+      adviceHttp: 'The source is temporarily unavailable; retry later or switch the source.',
+      adviceIntegrity: 'The downloaded file is incomplete; retry, and switch the source if it keeps failing.',
+      adviceStorage: 'Free some disk space or check permissions of the model folder.',
+      adviceUnknown: 'Retry later; switch the download source if it keeps failing.',
     };
 
     const CSS = `
@@ -498,6 +620,39 @@ window.__ModuleLoader__.load({
 .mn-dialog-foot .mn-foot-note{font-size:11.5px;color:var(--mn-muted)}
 .mn-dialog-foot .mn-foot-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
 
+/* ---------- models ---------- */
+.mn-chip-btn{cursor:pointer;font:inherit;text-align:left;transition:border-color .16s,color .16s}
+.mn-chip-btn:hover{border-color:var(--mn-line-strong);color:var(--mn-text)}
+.mn-link{border:0;background:none;padding:0;color:var(--mn-accent);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.mn-link:hover{text-decoration:underline}
+.mn-model-warn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;border-radius:9px;background:color-mix(in srgb,var(--mn-warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--mn-warn) 30%,var(--mn-line));color:var(--mn-warn);font-size:11.5px}
+.mn-model{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--mn-line);background:var(--mn-surface)}
+.mn-model + .mn-model{margin-top:10px}
+.mn-model-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mn-model-name{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mn-text);min-width:0;flex-wrap:wrap}
+.mn-model-name b{font-weight:600}
+.mn-tag{padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--mn-accent) 14%,transparent);color:var(--mn-accent);font-size:10.5px;font-weight:600}
+.mn-model-meta{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:11.5px;color:var(--mn-muted);flex-wrap:wrap}
+.mn-model-estimate{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--mn-muted)}
+.mn-model-progress{display:flex;flex-direction:column;gap:5px}
+.mn-progress{height:6px;border-radius:999px;background:var(--mn-surface-2);overflow:hidden}
+.mn-progress-fill{height:100%;border-radius:999px;background:var(--mn-accent);transition:width .3s ease-out}
+.mn-model-progress .mn-hint{margin:0}
+.mn-model-steps{font-size:11.5px;color:var(--mn-muted)}
+.mn-model-steps summary{cursor:pointer;user-select:none;list-style:none}
+.mn-model-steps summary::-webkit-details-marker{display:none}
+.mn-model-step-now{color:var(--mn-text)}
+.mn-model-steps ol{list-style:none;margin:7px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.mn-step{display:flex;align-items:center;gap:7px}
+.mn-model-step-status{margin-left:auto}
+.mn-model-error{padding:9px 11px;border-radius:9px;background:color-mix(in srgb,var(--mn-hot) 10%,transparent);border:1px solid color-mix(in srgb,var(--mn-hot) 28%,var(--mn-line));word-break:break-word}
+.mn-model-error strong{display:block;font-size:11.5px;color:var(--mn-hot);font-weight:600}
+.mn-model-error .mn-hint{color:var(--mn-muted);margin:4px 0 0}
+.mn-model-source{margin:0}
+.mn-model-source .mn-hint{margin:0}
+.mn-model-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mn-model-actions-hint{font-size:11px;color:var(--mn-muted)}
+
 @media (prefers-reduced-motion:reduce){
   .mn-spinner,.mn-skel,.mn-dot[data-tone="busy"],.mn-dot[data-tone="active"]{animation:none!important}
   .mn-overlay,.mn-dialog{animation:none}
@@ -559,13 +714,58 @@ window.__ModuleLoader__.load({
     };
 
     const PHASE_KEY = {
+      unprepare: 'phaseUnprepared',
       unprepared: 'phaseUnprepared',
       downloading: 'phaseDownloading',
       checking: 'phaseChecking',
       loading: 'phaseLoading',
+      waking: 'phaseWaking',
       ready: 'phaseReady',
       standby: 'phaseStandby',
       failed: 'phaseFailed',
+      cancelled: 'phaseCancelled',
+      cancelling: 'phaseCancelling',
+    };
+
+    // DSH 语音服务按阶段上报准备步骤（check → model → vad → verify → load）。
+    const STEP_KEY = {
+      check: 'stepCheck',
+      model: 'stepModel',
+      vad: 'stepVad',
+      verify: 'stepVerify',
+      load: 'stepLoad',
+    };
+
+    const STEP_STATUS_KEY = {
+      pending: 'stepPending',
+      idle: 'stepPending',
+      running: 'stepRunning',
+      complete: 'stepComplete',
+      completed: 'stepComplete',
+      failed: 'stepFailed',
+      cancelled: 'stepCancelled',
+    };
+
+    // 下载失败原因 → 中文/英文文案与建议（DSH 的 download.reason 是稳定枚举）。
+    const DOWNLOAD_REASON_KEY = {
+      network: 'reasonNetwork',
+      dns: 'reasonDns',
+      timeout: 'reasonTimeout',
+      certificate: 'reasonCertificate',
+      http: 'reasonHttp',
+      integrity: 'reasonIntegrity',
+      storage: 'reasonStorage',
+      unknown: 'reasonUnknown',
+    };
+    const DOWNLOAD_ADVICE_KEY = {
+      network: 'adviceNetwork',
+      dns: 'adviceDns',
+      timeout: 'adviceTimeout',
+      certificate: 'adviceCertificate',
+      http: 'adviceHttp',
+      integrity: 'adviceIntegrity',
+      storage: 'adviceStorage',
+      unknown: 'adviceUnknown',
     };
 
     function MicIcon(props) {
@@ -622,7 +822,7 @@ window.__ModuleLoader__.load({
           cfgDraft: null,
           cfgDirty: false,
           cfgSaving: false,
-          prepareBusy: false,
+          prepareId: '',
           confirmDelete: false,
           confirmCancel: false,
         });
@@ -677,18 +877,57 @@ window.__ModuleLoader__.load({
           storageDir: String(config?.storageDir || ''),
           transcribeMode: config?.transcribeMode === 'realtime' ? 'realtime' : 'after',
           language: String(config?.language || 'zh'),
+          providerId: String(config?.providerId || 'sensevoice-local'),
           captureSystemAudio: config?.captureSystemAudio !== false,
           captureMicrophone: config?.captureMicrophone !== false,
           chunkSeconds: Number(config?.chunkSeconds) || 25,
         });
 
+        // 兼容旧版 /state：没有 models 数组时，用当前 provider 合成一个只读列表项。
+        const modelList = (state) => {
+          if (Array.isArray(state?.models) && state.models.length) return state.models;
+          if (!state?.provider) return [];
+          const phase = state.provider.preparation?.phase || (state.providerReady ? 'ready' : 'unprepare');
+          return [
+            {
+              ...state.provider,
+              preparation: state.provider.preparation || { phase },
+              downloadSources: Array.isArray(state.provider.downloadSources) ? state.provider.downloadSources : [],
+              setupEstimate: state.provider.setupEstimate || null,
+              selected: true,
+              ready: state.providerReady === true || phase === 'ready' || phase === 'standby',
+              preparing: false,
+              canPrepare: ['unprepare', 'unprepared', 'cancelled', 'failed'].includes(phase),
+            },
+          ];
+        };
+
         const langLabel = (code) => (LANG_KEY[code] ? t(LANG_KEY[code]) : String(code || ''));
         const phaseLabel = (phase) => t(PHASE_KEY[phase] || 'phaseUnprepared');
         const phaseTone = (phase) => {
-          if (phase === 'ready') return 'ok';
-          if (phase === 'failed') return 'hot';
-          if (phase === 'downloading' || phase === 'checking' || phase === 'loading') return 'busy';
+          if (phase === 'ready' || phase === 'standby') return 'ok';
+          if (phase === 'failed' || phase === 'cancelled') return 'hot';
+          if (phase === 'downloading' || phase === 'checking' || phase === 'loading' || phase === 'waking' || phase === 'cancelling') {
+            return 'busy';
+          }
           return 'muted';
+        };
+
+        // 设置页模型列表：未就绪的本地模型需要用户手动下载，避免打开页面就偷偷下载。
+        const canPrepareModel = (model) => {
+          if (!model || model.preparing) return false;
+          if (model.canPrepare === true) return true;
+          const phase = model.preparation?.phase || 'unprepare';
+          return ['unprepare', 'unprepared', 'cancelled', 'failed'].includes(phase) && model.location !== 'cloud';
+        };
+        const preparingPhase = (phase) =>
+          ['checking', 'downloading', 'loading', 'waking', 'cancelling'].includes(phase);
+        const stepStatusLabel = (status) => t(STEP_STATUS_KEY[status] || 'stepPending');
+        const stepLabel = (kind) => t(STEP_KEY[kind] || kind);
+        const fmtMb = (bytes) => {
+          const mb = (Number(bytes) || 0) / 1024 / 1024;
+          if (!mb) return '0';
+          return mb >= 100 ? String(Math.round(mb)) : mb.toFixed(1).replace(/\.0$/, '');
         };
 
         const statusInfo = (status) => {
@@ -1062,7 +1301,14 @@ window.__ModuleLoader__.load({
             pollTimer = 0;
             await refreshState(true);
             if (subscribers > 0) schedulePoll();
-          }, 5000);
+          }, pollDelay());
+        };
+
+        // 准备/下载模型时缩短轮询间隔，让进度条几秒内动起来。
+        const pollDelay = () => {
+          const models = modelList(store.get().state);
+          const active = models.some((model) => model.preparing || preparingPhase(model.preparation?.phase));
+          return active ? 1000 : 5000;
         };
 
         const startPolling = () => {
@@ -1088,7 +1334,7 @@ window.__ModuleLoader__.load({
         const cfgEquals = (a, b) =>
           !!a &&
           !!b &&
-          ['storageDir', 'transcribeMode', 'language', 'chunkSeconds', 'captureSystemAudio', 'captureMicrophone'].every(
+          ['storageDir', 'transcribeMode', 'language', 'providerId', 'chunkSeconds', 'captureSystemAudio', 'captureMicrophone'].every(
             (key) => String(a[key]) === String(b[key]),
           );
 
@@ -1123,8 +1369,13 @@ window.__ModuleLoader__.load({
               const saved = data.config ? data.config[key] : undefined;
               draft[key] = saved === undefined ? patch[key] : saved;
             }
+            // 立即落库的字段同步更新基准值，避免把它算成「未保存的修改」。
+            const base = { ...(current.cfgBase || cfgFrom(current.state?.config)) };
+            for (const key of Object.keys(patch)) base[key] = draft[key];
             store.set({
               cfgDraft: draft,
+              cfgBase: base,
+              cfgDirty: !cfgEquals(draft, base),
               state: current.state
                 ? { ...current.state, config: data.config || current.state.config, storage: data.storage || current.state.storage }
                 : current.state,
@@ -1191,18 +1442,42 @@ window.__ModuleLoader__.load({
           }
         };
 
-        const prepareModel = async () => {
-          if (store.get().prepareBusy) return;
-          store.set({ prepareBusy: true, error: '' });
+        const prepareModel = async (providerId, downloadSource) => {
+          const id = String(
+            providerId || store.get().state?.provider?.id || store.get().cfgDraft?.providerId || '',
+          );
+          // 同一模型连续点击只发一次；不同模型允许并行（服务端 prepare 本身幂等）。
+          if (!id || store.get().prepareId === id) return;
+          store.set({ prepareId: id, error: '' });
           try {
-            await apiPost('/prepare', {});
+            await apiPost('/prepare', { providerId: id, downloadSource: downloadSource || '' });
             showNotice(t('prepareStarted'));
             void refreshState(true);
           } catch (error) {
             showError(error);
           } finally {
-            store.set({ prepareBusy: false });
+            store.set({ prepareId: '' });
           }
+        };
+
+        const cancelModelPrepare = async (providerId) => {
+          const id = String(providerId || '');
+          if (!id) return;
+          try {
+            await apiPost('/prepare/cancel', { providerId: id });
+            showNotice(t('modelCancelled'));
+            void refreshState(true);
+          } catch (error) {
+            showError(error);
+          }
+        };
+
+        const selectModel = async (providerId) => {
+          const id = String(providerId || '');
+          const current = store.get().state?.config?.providerId;
+          if (!id || id === current) return;
+          const saved = await patchConfig({ providerId: id }, { notice: t('modelSelected') });
+          if (saved) void refreshState(true);
         };
 
         const startRecording = async () => {
@@ -1617,10 +1892,10 @@ window.__ModuleLoader__.load({
         function Topbar() {
           const s = useStore();
           const state = s.state;
-          const provider = state?.provider || {};
-          const phase = provider.preparation?.phase || (state?.providerReady ? 'ready' : 'unprepared');
-          const ready = state ? state.providerReady === true || phase === 'ready' : false;
-          const preparing = s.prepareBusy || phase === 'downloading' || phase === 'checking' || phase === 'loading';
+          const models = modelList(state);
+          const current = models.find((model) => model.selected) || models[0] || null;
+          const phase = current?.preparation?.phase || (state?.providerReady ? 'ready' : 'unprepare');
+          const ready = !!current?.ready;
           return h(
             'header',
             { className: 'mn-topbar' },
@@ -1638,28 +1913,20 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'mn-topbar-right' },
+              // 模型状态只是入口：下载/切换都在设置页的模型列表里完成。
               h(
-                'span',
-                { className: 'mn-chip', title: provider.name || t('modelLabel') },
+                'button',
+                {
+                  type: 'button',
+                  className: 'mn-chip mn-chip-btn',
+                  title: `${t('modelLabel')}：${current?.name || t('phaseUnprepared')}`,
+                  onClick: openSettings,
+                },
                 h(StatusDot, { tone: ready ? 'ok' : phaseTone(phase) }),
-                h('b', null, provider.name || t('modelLabel')),
+                h('b', null, current?.name || t('modelLabel')),
                 h('span', { className: 'mn-sep' }, '·'),
-                h('span', null, preparing && phase !== 'ready' ? t('prepareBusy') : phaseLabel(phase)),
+                h('span', null, phaseLabel(phase)),
               ),
-              ready
-                ? null
-                : h(
-                    'button',
-                    {
-                      type: 'button',
-                      className: 'mn-btn',
-                      'data-variant': 'primary',
-                      'data-size': 'small',
-                      disabled: preparing || s.prepareBusy,
-                      onClick: prepareModel,
-                    },
-                    preparing ? t('prepareBusy') : phase === 'failed' ? t('prepareRetry') : t('prepare'),
-                  ),
               h(
                 'button',
                 {
@@ -1698,6 +1965,10 @@ window.__ModuleLoader__.load({
           const supported = state ? state.platform?.supported !== false : true;
           const busy = s.busy;
           const live = s.live;
+          // 录制面板只判断“当前选中的模型是否就绪”，下载/切换都在设置页。
+          const models = modelList(state);
+          const currentModel = models.find((model) => model.selected) || models[0] || null;
+          const modelReady = !!currentModel?.ready;
           const liveRef = React.useRef(null);
           const segmentCount = live.segments.length;
           React.useEffect(() => {
@@ -1807,6 +2078,19 @@ window.__ModuleLoader__.load({
                 : null,
             ),
             h('p', { className: 'mn-hint' }, mode === 'realtime' ? t('modeHintRealtime') : t('modeHintAfter')),
+            // 实时转写依赖模型就绪；这里只做提示并引导到设置页，不重复放下载按钮。
+            mode === 'realtime' && !active && (!modelReady || currentModel.realtime === false)
+              ? h(
+                  'div',
+                  { className: 'mn-model-warn', role: 'status' },
+                  h('span', null, modelReady ? t('modelRealtimeWarn') : t('modelNotReady')),
+                  h(
+                    'button',
+                    { type: 'button', className: 'mn-link', onClick: openSettings },
+                    t('modelNotReadySettings'),
+                  ),
+                )
+              : null,
             showLive
               ? h(
                   'div',
@@ -2114,11 +2398,239 @@ window.__ModuleLoader__.load({
           );
         }
 
+        // 设置页里的单个模型行：下载/取消/切换都集中在这里，未来新增 ASR provider 自动出现。
+        function ModelRow({ model }) {
+          const preparation = model.preparation || {};
+          const phase = preparation.phase || (model.ready ? 'ready' : 'unprepare');
+          const sources = Array.isArray(model.downloadSources) ? model.downloadSources : [];
+          const [source, setSource] = React.useState('auto');
+          const preparing = model.preparing === true || preparingPhase(phase);
+          const cancelling = phase === 'cancelling';
+          const idle = canPrepareModel(model);
+          const total = Number(preparation.totalBytes) || 0;
+          const completed = Number(preparation.completedBytes) || 0;
+          const percent = total > 0 ? Math.min(100, Math.max(0, Math.round((completed / total) * 100))) : 0;
+          const steps = Array.isArray(preparation.steps) ? preparation.steps : [];
+          const runningStep = steps.find((step) => step.status === 'running');
+          const download = preparation.download;
+          const failed = phase === 'failed';
+
+          const gb = (bytes) => {
+            const value = (Number(bytes) || 0) / 1e9;
+            return value ? String(Math.round(value * 10) / 10) : '0';
+          };
+          const sourceLabel = (origin) => {
+            if (!origin) return '';
+            if (/hf-mirror/i.test(origin)) return t('sourceMirror');
+            if (/huggingface/i.test(origin)) return t('sourceHuggingFace');
+            if (/modelscope/i.test(origin)) return t('sourceModelscope');
+            try {
+              return new URL(origin).hostname;
+            } catch {
+              return origin;
+            }
+          };
+
+          return h(
+            'div',
+            { className: 'mn-model', 'data-model': model.id },
+            h(
+              'div',
+              { className: 'mn-model-head' },
+              h(
+                'div',
+                { style: { minWidth: 0 } },
+                h(
+                  'div',
+                  { className: 'mn-model-name' },
+                  h('b', null, model.name || model.id),
+                  model.selected ? h('span', { className: 'mn-tag' }, t('modelCurrent')) : null,
+                ),
+                h(
+                  'div',
+                  { className: 'mn-model-meta' },
+                  h(StatusDot, { tone: phaseTone(phase) }),
+                  h('span', null, phaseLabel(phase)),
+                  runningStep ? h('span', null, `· ${stepLabel(runningStep.kind)}`) : null,
+                  model.location === 'cloud' ? h('span', null, '· cloud') : null,
+                ),
+              ),
+              !model.selected && !preparing
+                ? h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'mn-btn',
+                      'data-size': 'small',
+                      onClick: () => void selectModel(model.id),
+                    },
+                    t('useModel'),
+                  )
+                : null,
+            ),
+            // 未开始时先给出磁盘/内存/耗时估算，让用户知道要下多大的东西。
+            idle && model.setupEstimate
+              ? h(
+                  'div',
+                  { className: 'mn-model-estimate' },
+                  h('span', null, t('estimateDisk', { gb: gb(model.setupEstimate.recommendedDiskBytes) })),
+                  h('span', null, '·'),
+                  h('span', null, t('estimateMemory', { gb: gb(model.setupEstimate.expectedMemoryBytes) })),
+                  h('span', null, '·'),
+                  h('span', {
+                    children: t('estimateTime', {
+                      min: model.setupEstimate.minimumMinutes ?? 1,
+                      max: model.setupEstimate.maximumMinutes ?? 10,
+                    }),
+                  }),
+                )
+              : null,
+            model.realtime === false
+              ? h('p', { className: 'mn-hint', 'data-hint': 'realtime' }, t('modelRealtimeHint'))
+              : null,
+            phase === 'downloading'
+              ? h(
+                  'div',
+                  { className: 'mn-model-progress' },
+                  h(
+                    'div',
+                    {
+                      className: 'mn-progress',
+                      role: 'progressbar',
+                      'aria-label': t('downloadProgress'),
+                      'aria-valuenow': percent,
+                      'aria-valuemin': 0,
+                      'aria-valuemax': 100,
+                    },
+                    h('div', { className: 'mn-progress-fill', style: { width: `${percent}%` } }),
+                  ),
+                  h(
+                    'p',
+                    { className: 'mn-hint' },
+                    total > 0
+                      ? t('downloadBytes', {
+                          completed: fmtMb(completed),
+                          total: fmtMb(total),
+                          percent: String(percent),
+                        })
+                      : t('downloadUnknown', { completed: fmtMb(completed) }),
+                    preparation.resource ? ` · ${preparation.resource}` : '',
+                  ),
+                )
+              : null,
+            steps.length && (preparing || failed || phase === 'cancelled' || phase === 'cancelling')
+              ? h(
+                  'details',
+                  { className: 'mn-model-steps' },
+                  h(
+                    'summary',
+                    null,
+                    t('modelSteps'),
+                    runningStep ? h('span', { className: 'mn-model-step-now' }, ` · ${stepLabel(runningStep.kind)}`) : null,
+                  ),
+                  h(
+                    'ol',
+                    null,
+                    steps.map((step, index) =>
+                      h(
+                        'li',
+                        { key: `${step.kind}-${index}`, className: 'mn-step' },
+                        h(StatusDot, {
+                          tone:
+                            step.status === 'complete' || step.status === 'completed'
+                              ? 'ok'
+                              : step.status === 'running'
+                                ? 'busy'
+                                : step.status === 'failed'
+                                  ? 'hot'
+                                  : 'muted',
+                        }),
+                        h('span', null, stepLabel(step.kind)),
+                        h('span', { className: 'mn-model-step-status' }, stepStatusLabel(step.status)),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+            failed
+              ? h(
+                  'div',
+                  { className: 'mn-model-error' },
+                  h(
+                    'strong',
+                    null,
+                    download?.reason
+                      ? t('downloadReason', {
+                          reason: t(DOWNLOAD_REASON_KEY[download.reason] || 'reasonUnknown'),
+                        })
+                      : t('preparationFailed', { message: preparation.message || t('phaseFailed') }),
+                  ),
+                  download?.reason
+                    ? h('p', { className: 'mn-hint' }, t(DOWNLOAD_ADVICE_KEY[download.reason] || 'adviceUnknown'))
+                    : null,
+                  download?.source
+                    ? h('p', { className: 'mn-hint' }, `${t('downloadSource')}: ${download.source}`)
+                    : null,
+                )
+              : null,
+            idle && sources.length
+              ? h(
+                  'div',
+                  { className: 'mn-field mn-model-source' },
+                  h('label', { className: 'mn-label', htmlFor: `mn-model-source-${model.id}` }, t('downloadSource')),
+                  h(
+                    'select',
+                    {
+                      id: `mn-model-source-${model.id}`,
+                      className: 'mn-select',
+                      value: source,
+                      onChange: (event) => setSource(event.target.value),
+                    },
+                    h('option', { value: 'auto' }, t('sourceAuto')),
+                    sources.map((origin) => h('option', { key: origin, value: origin }, sourceLabel(origin))),
+                  ),
+                  h('p', { className: 'mn-hint' }, source === 'auto' ? t('sourceAutoHelp') : t('sourceManualHelp')),
+                )
+              : null,
+            h(
+              'div',
+              { className: 'mn-model-actions' },
+              preparing
+                ? h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'mn-btn',
+                      'data-size': 'small',
+                      disabled: cancelling,
+                      onClick: () => void cancelModelPrepare(model.id),
+                    },
+                    cancelling ? t('phaseCancelling') : t('modelCancel'),
+                  )
+                : idle
+                  ? h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'mn-btn',
+                        'data-variant': 'primary',
+                        'data-size': 'small',
+                        onClick: () => void prepareModel(model.id, source === 'auto' ? '' : source),
+                      },
+                      phase === 'failed' || phase === 'cancelled' ? t('modelRetry') : t('modelDownload'),
+                    )
+                  : null,
+              preparing && phase === 'downloading' ? h('span', { className: 'mn-model-actions-hint' }, t('modelPreparing')) : null,
+            ),
+          );
+        }
+
         function SettingsDialog() {
           const s = useStore();
           const boxRef = React.useRef(null);
           const draft = s.cfgDraft || cfgFrom(s.state?.config);
           const languages = s.state?.provider?.languages || ['auto', 'zh', 'en', 'yue', 'ja', 'ko'];
+          const models = modelList(s.state);
           const recording = !!s.state?.recording?.active;
           React.useEffect(() => {
             const onKey = (event) => {
@@ -2162,6 +2674,20 @@ window.__ModuleLoader__.load({
               h(
                 'div',
                 { className: 'mn-dialog-body' },
+                h(
+                  'div',
+                  { className: 'mn-group' },
+                  h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionModels'))),
+                  h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('modelSectionNote')),
+                  models.length
+                    ? h(
+                        'div',
+                        { className: 'mn-model-list' },
+                        models.map((model) => h(ModelRow, { key: model.id, model })),
+                      )
+                    : h('p', { className: 'mn-hint' }, t('modelEmpty')),
+                  h('p', { className: 'mn-hint' }, t('modelsHint')),
+                ),
                 h(
                   'div',
                   { className: 'mn-group' },

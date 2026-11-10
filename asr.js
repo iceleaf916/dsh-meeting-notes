@@ -53,9 +53,71 @@ export function providerView(service, providerId) {
   }
 }
 
+/** 正在准备中的 phase（含取消收尾），期间禁止重复触发准备。 */
+const BUSY_PHASES = new Set(['checking', 'downloading', 'loading', 'waking', 'cancelling']);
+/** 可以（重新）发起准备的 phase。注意 DSH 用 unprepare，旧版本/默认值可能是 unprepared。 */
+const IDLE_PHASES = new Set(['unprepare', 'unprepared', 'cancelled', 'failed']);
+
 /** 触发模型准备（下载 / 校验 / 加载），幂等；进度通过 providerView 观察。 */
 export function prepareProvider(service, providerId, options) {
   service.prepare(providerId, options);
+}
+
+/** 取消正在进行/排队的模型准备（下载中断、文件保留以便续传）。 */
+export function cancelPrepare(service, providerId) {
+  return service.cancelPreparation(providerId);
+}
+
+/** 指定的 provider 是否存在（不存在返回 null）。 */
+export function findProvider(service, providerId) {
+  if (!service || !providerId) return null;
+  try {
+    const providers = service.listProviders();
+    if (!Array.isArray(providers)) return null;
+    return providers.find((item) => item.id === providerId) || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 模型列表视图：给设置页渲染「可下载 / 可切换的 ASR 模型列表」。
+ * 直接透传 provider.info（含 downloadSources、setupEstimate）和 preparation 进度，
+ * 未来 DSH 语音服务注册新的 provider 时，列表会自动多出一行，不需要改前端。
+ */
+export function providerCatalog(service, selectedId) {
+  if (!service) return [];
+  let snapshot;
+  try {
+    snapshot = service.snapshot();
+  } catch {
+    return [];
+  }
+  const providers = Array.isArray(snapshot?.providers) ? snapshot.providers : [];
+  return providers.map((view) => {
+    const preparation = view.preparation || { phase: 'unprepare' };
+    const phase = preparation.phase || 'unprepare';
+    const location = view.location || 'host-local';
+    const ready = phase === 'ready' || phase === 'standby';
+    const preparing = BUSY_PHASES.has(phase);
+    return {
+      id: view.id,
+      name: view.name || view.id,
+      location,
+      languages: Array.isArray(view.languages) ? view.languages : [],
+      downloadSources: Array.isArray(view.downloadSources) ? view.downloadSources : [],
+      setupEstimate: view.setupEstimate || null,
+      // 插件自定义 provider 可声明扩展能力：单次推理窗口上限与是否适合实时转写。
+      maxChunkSeconds: Number(view.maxChunkSeconds) > 0 ? Number(view.maxChunkSeconds) : null,
+      realtime: view.realtime !== false,
+      preparation,
+      selected: view.id === selectedId,
+      ready,
+      preparing,
+      // 云端 provider 不需要本地下载；本地 provider 在未就绪/失败/取消后可发起准备。
+      canPrepare: !preparing && location !== 'cloud' && IDLE_PHASES.has(phase),
+    };
+  });
 }
 
 export function isProviderReady(view) {
@@ -64,12 +126,14 @@ export function isProviderReady(view) {
 }
 
 /** 按静音点把 PCM 切成若干块；每块附带起始秒偏移，供文稿时间戳使用。 */
-export function splitPcm(pcm, { chunkSeconds = 25 } = {}) {
+export function splitPcm(pcm, { chunkSeconds = 25, maxChunkSeconds = 50 } = {}) {
   const totalFrames = Math.floor(pcm.length / FRAME_BYTES);
   if (!totalFrames) return [];
-  const target = Math.max(8, Math.min(45, Math.round(chunkSeconds))) * FRAMES_PER_SECOND;
-  const minFrames = 3 * FRAMES_PER_SECOND;
-  const maxFrames = Math.min(target + 10 * FRAMES_PER_SECOND, 50 * FRAMES_PER_SECOND);
+  // 部分模型（如 Qwen3-ASR）单次推理窗口有限，切块上限由 provider 的 maxChunkSeconds 决定。
+  const limit = Math.max(3, Math.min(50, Math.round(maxChunkSeconds) || 50));
+  const target = Math.min(Math.max(8, Math.min(45, Math.round(chunkSeconds))), limit) * FRAMES_PER_SECOND;
+  const minFrames = Math.min(3 * FRAMES_PER_SECOND, target);
+  const maxFrames = Math.min(target + 10 * FRAMES_PER_SECOND, limit * FRAMES_PER_SECOND);
 
   const rms = new Float64Array(totalFrames);
   for (let frame = 0; frame < totalFrames; frame += 1) {

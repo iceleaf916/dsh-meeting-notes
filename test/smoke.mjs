@@ -48,6 +48,27 @@ const state = {
     preparation: { phase: 'ready', steps: [{ kind: 'check', status: 'complete' }] },
   },
   providerReady: true,
+  speechAvailable: true,
+  models: [
+    {
+      id: 'sensevoice-local',
+      name: 'SenseVoiceSmall (INT8)',
+      location: 'host-local',
+      languages: ['auto', 'zh', 'en'],
+      downloadSources: ['https://huggingface.co', 'https://hf-mirror.com'],
+      setupEstimate: {
+        recommendedDiskBytes: 1e9,
+        expectedMemoryBytes: 1e9,
+        minimumMinutes: 1,
+        maximumMinutes: 10,
+      },
+      preparation: { phase: 'ready', steps: [{ kind: 'check', status: 'complete' }] },
+      selected: true,
+      ready: true,
+      preparing: false,
+      canPrepare: false,
+    },
+  ],
   recording: {
     active: false,
     meetingId: '',
@@ -130,7 +151,14 @@ const dicts = {};
 const registered = {};
 const fakeCtx = {
   locale: {
-    bind: (ns) => (key) => dicts[ns]?.[key] ?? key,
+    // 实现与真实 locale 相同：支持 {name} 占位符插值。
+    bind: (ns) => (key, params) => {
+      const template = dicts[ns]?.[key] ?? key;
+      if (!params || typeof template !== 'string') return template;
+      return template.replace(/\{(\w+)\}/g, (match, name) =>
+        Object.prototype.hasOwnProperty.call(params, name) ? String(params[name]) : match,
+      );
+    },
     register: (ns, lang, dict) => {
       if (lang !== 'zh') return () => {};
       dicts[ns] = { ...(dicts[ns] || {}), ...dict };
@@ -242,6 +270,9 @@ if (settingsBtn) {
   });
   const dialog = container.querySelector('[role="dialog"]');
   ok(!!dialog, '点击设置后出现 role=dialog 弹窗');
+  ok(!!dialog && (dialog.textContent || '').includes('识别模型'), '设置页出现「识别模型」分组');
+  ok(!!dialog && (dialog.textContent || '').includes('SenseVoiceSmall'), '设置页模型列表显示 SenseVoiceSmall');
+  ok(!!dialog && (dialog.textContent || '').includes('当前使用'), '设置页模型列表标出当前使用的模型');
   const dirInput = dialog && dialog.querySelector('input[type="text"]');
   ok(!!dirInput, '弹窗内出现存储目录输入框');
   const switchInput = dialog && dialog.querySelector('input[type="checkbox"]');

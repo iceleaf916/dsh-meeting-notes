@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.1.4
+
+接入 Qwen3-ASR：插件自带第二个本地 ASR 模型，可在设置页模型列表里与 SenseVoice 切换。
+
+- 新增 `qwen3.js` / `qwen3-worker.js`：把 Qwen3-ASR-0.6B (INT8) 注册为 DSH `speechToText` 的 provider（id `qwen3-asr-0.6b`），模型推理跑在 `worker_threads` 里，主进程不被推理阻塞；空闲 5 分钟释放 worker 回到 standby。
+- 模型下载：6 个文件从 ModelScope（国内推荐）或 HF-Mirror 顺序下载，支持断点续用（同尺寸文件跳过）、`.part` 原子落盘、失败换源；进度/步骤/失败原因沿用现有模型列表 UI，无需前端特殊分支。
+- Qwen3-ASR 单次推理窗口约 30 秒，超出会输出乱码：provider 通过 `maxChunkSeconds=30` 约束整段转写切块与实时分段长度；UI 标注「实时转写延迟较高，建议结束后转写」。
+- `package.json` 新增依赖 `sherpa-onnx-node@^2.0.1`（含 macOS arm64 原生 ONNX 运行时）；新增可选配置 `qwen3ModelDir` / `qwen3Threads`（默认 `~/.dsh/speech-to-text/qwen3-asr-0.6b`、自动线程数）。
+- 新增 `test/qwen3.mjs`（WAV 解析、30 秒切块上限、下载错误归类、provider 元数据与未准备状态）；预览脚本补 Qwen3 模型行。
+
+## v0.1.3
+
+识别模型的下载与切换收进设置页，为后续接入更多 ASR 模型预留列表。
+
+- 设置页新增**识别模型**分组：按 DSH 语音服务的 provider 动态渲染列表，每行显示名称、当前使用状态、准备阶段与步骤、下载字节进度、失败原因与建议；未准备时给出磁盘/内存/首次准备耗时估算。
+- 下载、重试与取消准备都在模型行内完成，可选择下载源（自动 / Hugging Face / HF-Mirror）；**点按钮才下载**，打开设置页不会自动拉起模型下载。
+- 支持在列表里切换当前使用的识别模型（走 `/config` 的 `providerId`）；顶部模型状态 chip 改为设置页入口，录音面板在实时转写未就绪时给出「去设置准备」引导。
+- Host 接口扩展：`/state` 返回 `models`（多模型列表与准备进度）与 `speechAvailable`；`POST /prepare` 接受 `{ providerId, downloadSource }`；新增 `POST /prepare/cancel`；`/config` 校验 `providerId` 是否存在。
+- 模型进行中时客户端把轮询间隔收紧到 1 秒，其余时间仍是 5 秒，下载进度更连续。
+- 新增 `test/models.mjs` 覆盖模型列表、切换、下载与取消准备；`test/smoke.mjs` 同步补充设置页模型列表断言。
+
 ## v0.1.2
 
 - 插件目录与包标识改名为 `dsh-meeting-notes` / `@local/dsh-meeting-notes`，与仓库里带 `dsh-` 前缀的命名习惯一致；HTTP 路由、SSE 事件与 header 同步改为 `/dsh-meeting-notes/*`、`x-dsh-meeting-notes`。

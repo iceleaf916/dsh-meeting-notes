@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-meeting-notes",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "description": "Local meeting recorder and transcriber for DeepSeek Harness",
@@ -43,6 +43,7 @@
   "dependencies": {
     "jsdom": "^31.0.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "sherpa-onnx-node": "^2.0.1"
   }
 }

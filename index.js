@@ -31,9 +31,12 @@ import {
 import { ensureRecorder, platformInfo, recorderState, startRecorder } from './capture.js';
 import {
   RealtimeSegmenter,
+  cancelPrepare,
+  findProvider,
   isProviderReady,
   pickProvider,
   prepareProvider,
+  providerCatalog,
   providerView,
   speechService,
   splitPcm,
@@ -41,6 +44,7 @@ import {
   transcribeChunks,
 } from './asr.js';
 import { createMinutesRecord } from './minutes.js';
+import { createQwen3Provider } from './qwen3.js';
 
 export const inject = ['webServer'];
 
@@ -98,6 +102,8 @@ function parseMeetingPath(urlPath) {
 }
 
 export function apply(ctx, config = {}) {
+  /** 原始插件配置；normalizeConfig 只保留运行字段，这里要读 Qwen3 的可选路径/线程数。 */
+  const rawConfig = config && typeof config === 'object' ? config : {};
   let currentConfig = normalizeConfig(config, DEFAULT_CONFIG);
   /** 正在进行的录音；同一时间只允许一路。 */
   let recording = null;
@@ -194,6 +200,8 @@ export function apply(ctx, config = {}) {
     const service = speechService(ctx);
     const provider = pickProvider(service, config.providerId);
     const view = provider ? providerView(service, provider.id) : null;
+    // 设置页的模型列表：直接来自 DSH 语音服务的 provider 注册表，未来新增模型自动出现。
+    const models = providerCatalog(service, config.providerId);
     const meetings = await listMeetings(config.storageDir);
     const recorder = await recorderState();
     return {
@@ -203,6 +211,8 @@ export function apply(ctx, config = {}) {
       storage,
       provider: view,
       providerReady: isProviderReady(view),
+      speechAvailable: !!service,
+      models,
       recording: recordingPayload(),
       meetings,
       capabilities: { buildRecorder: platform.supported, recorderBuilt: recorder.built },
@@ -256,7 +266,10 @@ export function apply(ctx, config = {}) {
 
       const pcm = await readWavPcm(path.join(dir, 'audio.wav'));
       if (!pcm.length) throw new Error('录音文件为空，无法转写');
-      const chunks = splitPcm(pcm, { chunkSeconds: config.chunkSeconds });
+      const chunks = splitPcm(pcm, {
+        chunkSeconds: config.chunkSeconds,
+        maxChunkSeconds: Number(provider.maxChunkSeconds) > 0 ? provider.maxChunkSeconds : 50,
+      });
       const segments = await transcribeChunks(chunks, {
         service,
         providerId: provider.id,
@@ -312,7 +325,7 @@ export function apply(ctx, config = {}) {
     const view = providerView(service, provider.id);
     if (!view || !isProviderReady(view)) {
       if (mode === 'realtime') {
-        throw new HttpError(400, '实时转写需要本地模型先就绪，请先点击「准备本地模型」');
+        throw new HttpError(400, '实时转写需要本地模型先就绪，请到「设置 → 识别模型」下载并准备好模型');
       }
       // 录后转写：录音期间在后台把模型准备好，停止时就不必再等下载。
       prepareProvider(service, provider.id);
@@ -348,8 +361,10 @@ export function apply(ctx, config = {}) {
     };
 
     if (session.mode === 'realtime') {
+      // Qwen3 这类非流式模型的单次推理窗口有限（约 30 秒），切块不能超过 provider 的上限。
+      const providerCap = Number(provider.maxChunkSeconds);
       session.segmenter = new RealtimeSegmenter({
-        chunkSeconds: config.chunkSeconds,
+        chunkSeconds: providerCap > 0 ? Math.min(config.chunkSeconds, providerCap) : config.chunkSeconds,
         onChunk: (chunk) => handleRealtimeChunk(session, chunk),
       });
     }
@@ -542,6 +557,13 @@ export function apply(ctx, config = {}) {
   // ---- 配置 ----
   async function saveConfig(patch) {
     const next = normalizeConfig({ ...currentConfig, ...patch }, currentConfig);
+    // 模型选择必须指向 DSH 语音服务真实注册的 provider，避免把配置写成不存在的 id。
+    if (patch.providerId) {
+      const service = speechService(ctx);
+      if (service && !findProvider(service, next.providerId)) {
+        throw new HttpError(400, `没有可用的本地语音识别服务（${next.providerId}）`);
+      }
+    }
     const editor = configEditor();
     const entry = resolveEntry();
     if (!editor || !entry) throw new HttpError(400, '当前 profile 不支持保存插件配置');
@@ -625,9 +647,38 @@ export function apply(ctx, config = {}) {
         requireWrite(req);
         const service = speechService(ctx);
         if (!service) throw new HttpError(400, 'DSH 的本地语音识别服务未启用');
-        const provider = pickProvider(service, currentConfig.providerId);
-        if (!provider) throw new HttpError(400, '没有可用的本地语音识别服务');
-        prepareProvider(service, provider.id);
+        const body = await readJsonBody(req);
+        const requested = String(body.providerId || '').trim();
+        const provider = requested ? findProvider(service, requested) : pickProvider(service, currentConfig.providerId);
+        if (!provider) {
+          throw new HttpError(400, requested ? `没有可用的本地语音识别服务（${requested}）` : '没有可用的本地语音识别服务');
+        }
+        const source = String(body.downloadSource || '').trim();
+        let options;
+        if (source && source !== 'auto') {
+          const sources = Array.isArray(provider.downloadSources) ? provider.downloadSources : [];
+          if (sources.length && !sources.includes(source)) throw new HttpError(400, '不支持的模型下载来源');
+          options = { downloadSource: source };
+        }
+        prepareProvider(service, provider.id, options);
+        sendJson(res, { ok: true, providerId: provider.id });
+      },
+    },
+    {
+      kind: 'exact',
+      path: `${PREFIX}/prepare/cancel`,
+      handler: async (req, res) => {
+        requireWrite(req);
+        const service = speechService(ctx);
+        if (!service) throw new HttpError(400, 'DSH 的本地语音识别服务未启用');
+        const body = await readJsonBody(req);
+        const providerId = String(body.providerId || currentConfig.providerId || '').trim();
+        const provider = findProvider(service, providerId);
+        if (!provider) throw new HttpError(400, `没有可用的本地语音识别服务（${providerId}）`);
+        if (typeof service.cancelPreparation !== 'function') {
+          throw new HttpError(400, '当前语音服务不支持取消模型准备');
+        }
+        await cancelPrepare(service, provider.id);
         sendJson(res, { ok: true, providerId: provider.id });
       },
     },
@@ -750,6 +801,25 @@ export function apply(ctx, config = {}) {
       },
     },
   ];
+
+  // 在 DSH 的 speechToText 服务上注册本插件自带的 Qwen3-ASR provider。
+  // 之所以由插件注册：DSH 目前内置的 provider 只有 SenseVoice，模型列表要能切换就需要
+  // speechToText 上存在第二个 provider；服务出现/卸载由 cordis 的 inject 生命周期管理。
+  ctx.inject(['speechToText'], (speechCtx) => {
+    // 注册失败（例如原生 ONNX 运行时不可用）只降级为「没有 Qwen3 可切换」，
+    // 不能让整个会议记录插件跟着挂掉。
+    try {
+      const provider = createQwen3Provider({
+        modelRoot:
+          typeof rawConfig.qwen3ModelDir === 'string' && rawConfig.qwen3ModelDir ? rawConfig.qwen3ModelDir : undefined,
+        threads: Number(rawConfig.qwen3Threads) > 0 ? Number(rawConfig.qwen3Threads) : undefined,
+      });
+      speechCtx.effect(() => speechCtx.speechToText.register(provider));
+      speechCtx.effect(() => () => provider.dispose());
+    } catch (error) {
+      console.error('[dsh-meeting-notes] 注册 Qwen3-ASR provider 失败：', error);
+    }
+  });
 
   ctx.effect(() => {
     const disposers = routes.map((route) =>

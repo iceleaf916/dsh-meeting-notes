@@ -103,6 +103,49 @@ const state = {
     preparation: { phase: 'standby', steps: [] },
   },
   providerReady: true,
+  speechAvailable: true,
+  models: [
+    {
+      id: 'sensevoice-local',
+      name: 'SenseVoiceSmall (INT8)',
+      location: 'host-local',
+      languages: ['auto', 'zh', 'en', 'yue', 'ja', 'ko'],
+      downloadSources: ['https://huggingface.co', 'https://hf-mirror.com'],
+      setupEstimate: { recommendedDiskBytes: 1e9, expectedMemoryBytes: 1e9, minimumMinutes: 1, maximumMinutes: 10 },
+      preparation: { phase: 'ready', steps: [{ kind: 'check', status: 'complete' }] },
+      selected: true,
+      ready: true,
+      preparing: false,
+      canPrepare: false,
+    },
+    {
+      id: 'whisper-local',
+      name: 'Whisper Small (INT8)',
+      location: 'host-local',
+      languages: ['auto', 'zh', 'en'],
+      downloadSources: ['https://huggingface.co', 'https://hf-mirror.com'],
+      setupEstimate: { recommendedDiskBytes: 5e8, expectedMemoryBytes: 8e8, minimumMinutes: 2, maximumMinutes: 6 },
+      preparation: { phase: 'unprepare', steps: [] },
+      selected: false,
+      ready: false,
+      preparing: false,
+      canPrepare: true,
+    },
+    {
+      id: 'qwen3-asr-0.6b',
+      name: 'Qwen3-ASR-0.6B (INT8)',
+      location: 'host-local',
+      languages: ['auto', 'zh', 'en', 'yue', 'ja', 'ko'],
+      downloadSources: ['https://modelscope.cn', 'https://hf-mirror.com'],
+      setupEstimate: { recommendedDiskBytes: 1.15e9, expectedMemoryBytes: 1.6e9, minimumMinutes: 3, maximumMinutes: 25 },
+      preparation: { phase: 'unprepare', steps: [] },
+      selected: false,
+      ready: false,
+      preparing: false,
+      canPrepare: true,
+      realtime: false,
+    },
+  ],
   recording: {
     active: false,
     meetingId: '',
@@ -211,7 +254,13 @@ const dicts = {};
 const registered = {};
 const fakeCtx = {
   locale: {
-    bind: (ns) => (key) => dicts[ns]?.[key] ?? key,
+    bind: (ns) => (key, params) => {
+      const template = dicts[ns]?.[key] ?? key;
+      if (!params || typeof template !== 'string') return template;
+      return template.replace(/\{(\w+)\}/g, (match, name) =>
+        Object.prototype.hasOwnProperty.call(params, name) ? String(params[name]) : match,
+      );
+    },
     register: (ns, lang, dict) => {
       if (lang !== 'zh') return () => {};
       dicts[ns] = { ...(dicts[ns] || {}), ...dict };
