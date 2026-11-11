@@ -31,6 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          # 手动触发时检出的必须是输入的那个 tag，否则校验的版本号可能不是要发布的那个
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v7
