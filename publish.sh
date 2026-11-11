@@ -188,14 +188,14 @@ EOF
 fi
 
 # ---- 10. 校验与后续步骤 ----------------------------------------------------
-say "校验 registry（新包 / 首次发布会先建 0.0.0-stage 占位，最多等 90 秒）"
+say "校验 registry（新包 / 首次发布会先建 0.0.0-stage 占位；npm 传播可能需要 2–3 分钟，最多等 240 秒）"
 VERIFY_RC=1
-for _i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
+for ((_i = 0; _i < 48; _i++)); do
   if npm view "$PKG@$VER" version --registry="$REG" >/dev/null 2>&1; then VERIFY_RC=0; break; fi
   sleep 5
 done
 if [ "$VERIFY_RC" -ne 0 ]; then
-  die "发布命令返回成功，但 90 秒内 registry 查不到 $VER：若是 staged 发布，需要维护者在 npmjs.com 放行；否则先看 https://www.npmjs.com/package/$PKG 再决定是否重发"
+  die "发布命令返回成功，但 240 秒内 registry 查不到 $VER：若是 staged 发布，需要维护者在 npmjs.com 放行；否则先看 https://www.npmjs.com/package/$PKG 再决定是否重发（npm 传播延迟也可能超过窗口，先直接看 npmjs.com 的版本页再判断）"
 fi
 npm view "$PKG@$VER" version dist.tarball --registry="$REG"
 
