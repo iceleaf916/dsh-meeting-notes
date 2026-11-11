@@ -8,6 +8,7 @@
 - 交互：临时结果提示改为 DSH Toast（顶部居中，3s 停留后淡出）；图标提示改用 DSH Tooltip（hover 500ms 延迟、focus 立即、Escape 关闭、贴边夹取），不再用原生 `title`；删除会议与放弃录音改为 DSH 风格 modal 确认框（mask + 焦点陷阱 + Escape + 取消/确认二选一），不再用按钮文案二次变形；设置页复用同一个弹窗组件，开关补 `role="switch"` / `aria-checked`。
 - 组件：插件内自行实现 Tooltip / Modal / ConfirmDialog / Toast（按 practices 规定不 require Harness Client 包，复制的是 DSH 原语的 markup、CSS 与交互行为）。
 - 测试：`test/preview.mjs` 的主题令牌换成 DSH 真实取值（含暗色），新增 confirm 与 toast 两组截图场景，并禁用动画保证截图为终态。
+- 打包发布：npm 包名改为 `@iceleaf/dsh-meeting-notes`（`@local/` 只用于本地 link），`cordis.patch.yml` 的 `name` 与 `client.js` 的模块 id 同步；`files` 补上 `qwen3.js` / `qwen3-worker.js`（之前漏了，装包后会在 `import './qwen3.js'` 处直接崩）；`jsdom` / `react` / `react-dom` 从 `dependencies` 移到 `devDependencies`（React 由宿主模块表提供，`jsdom` 只用于测试），`sherpa-onnx-node` 仍是唯一运行时依赖；补 `repository` / `homepage` / `bugs` / `keywords` / `publishConfig`（发布固定走 `registry.npmjs.org`，避开本机 npmmirror 只读镜像），并去掉 `private`。发布链路脚本化：`publish.sh` 把「元数据、包内容、语法与冒烟测试、四处版本号同步、registry 判重、脏工作区确认、dry-run、登录态」收成十步前置检查，交互终端里把 stdio 原样交给 `npm publish`（2FA 需要浏览器授权，接管道会直接 `EOTP`）；新增 `.github/workflows/ci.yml`（打包预检）与 `release.yml`（推 `v*` tag 自动发布并带 provenance，支持 `NPM_TOKEN` 或 OIDC 可信发布）。
 
 ## v0.1.4
 

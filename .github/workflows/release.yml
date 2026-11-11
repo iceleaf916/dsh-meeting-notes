@@ -1,0 +1,79 @@
+name: Release
+
+# 打 tag（v*）即发布；也可以在 Actions 页面手动指定一个已存在的 tag 重跑。
+#
+# 认证二选一：
+#   1) 仓库 secret NPM_TOKEN（Granular / Automation token，publish 权限 + bypass 2FA）
+#   2) 不配 token，改用 npm 可信发布（OIDC）：npmjs.com → 包设置 → Trusted publishing
+#      填 GitHub 用户名 iceleaf916 / 仓库 dsh-meeting-notes / 工作流文件名 release.yml
+#      （环境名留空）。可信发布要求包已存在于 npm，所以首次发布必须走方式 1。
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "已存在的 tag（如 v0.2.1），必须与 package.json 的 version 一致"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write # OIDC：可信发布 + provenance 签名
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: 校验 tag、版本号与分支
+        env:
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::tag=$TAG 与 package.json 的 v$VERSION 不一致：先改版本号并提交，再打 tag"
+            exit 1
+          fi
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::该 tag 指向的提交不在 origin/main 上，拒绝发布"
+            exit 1
+          fi
+          echo "准备发布 $TAG"
+
+      - name: 安装依赖
+        run: npm ci --omit=optional
+
+      - name: 测试
+        run: |
+          set -euo pipefail
+          node test/smoke.mjs
+          node test/models.mjs
+          node test/qwen3.mjs
+
+      - name: 发布到 npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "认证方式：NPM_TOKEN"
+            printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > "$HOME/.npmrc"
+          else
+            echo "认证方式：OIDC 可信发布（无需 token）"
+          fi
+          ./publish.sh --ci --provenance --skip-tests

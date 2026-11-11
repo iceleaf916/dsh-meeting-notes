@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: 安装依赖
+        run: npm ci --omit=optional
+
+      - name: 语法检查
+        run: |
+          set -euo pipefail
+          for f in index.js client.js storage.js capture.js asr.js minutes.js qwen3.js qwen3-worker.js; do
+            node --check "$f"
+          done
+
+      - name: 测试
+        run: |
+          set -euo pipefail
+          node test/smoke.mjs
+          node test/models.mjs
+          node test/qwen3.mjs
+
+      - name: 打包预检（不发布）
+        run: ./publish.sh --ci --dry-run --skip-tests

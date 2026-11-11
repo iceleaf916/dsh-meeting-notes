@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: '@local/dsh-meeting-notes',
+  id: '@iceleaf/dsh-meeting-notes',
   factory(require) {
     const React = require('react');
     const h = React.createElement;

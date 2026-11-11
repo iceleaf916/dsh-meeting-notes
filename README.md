@@ -2,7 +2,7 @@
 
 一个 DSH Web 插件：左侧栏「会议记录」入口，把「系统声音 + 麦克风」混音录下来，用本地语音识别模型（默认 SenseVoiceSmall，也可切换本插件自带的 Qwen3-ASR）转成中文文稿（可夹少量英文），需要时一键把转写交给 DSH 大模型整理成会议纪要，并在左侧工作区生成一条可继续聊天的会话记录。
 
-当前版本：**v0.2.0**（详见 [CHANGELOG.md](CHANGELOG.md)）。
+当前版本：**v0.2.0**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
 
 ## 功能
 
@@ -29,16 +29,27 @@
 - Qwen3-ASR 由本插件注册到同一个 `ctx.speechToText` 服务：依赖 `sherpa-onnx-node`（`^2.0.1`，含 macOS arm64 原生 ONNX 运行时），模型文件放在 `~/.dsh/speech-to-text/qwen3-asr-0.6b/`（可用 `qwen3ModelDir` 配置覆盖），下载源为 ModelScope（国内推荐）或 HF-Mirror。
 - 录制需要 macOS 13+（ScreenCaptureKit 音频采集），首次使用由插件调用 `swiftc` 编译 `recorder/`（Xcode Command Line Tools，约 10–30 秒）。
 - 系统权限：**屏幕录制**（采系统声音）与**麦克风**，授予对象是 DeepSeek Harness。未授权时页面会给出中文提示与跳转说明。
-- 无第三方 npm 依赖、无构建步骤、无数据库；客户端只用 React（由 DSH 模块表提供）与浏览器 `fetch` / `ReadableStream`。
+- 运行时依赖只有 `sherpa-onnx-node`（Qwen3-ASR 的 ONNX 运行时）；客户端只用 React（由 DSH 模块表提供）与浏览器 `fetch` / `ReadableStream`，无构建步骤、无数据库。
 
 ## 安装
 
+从 npm 安装（推荐）：
+
 ```bash
-git clone https://github.com/iceleaf916/dsh-meeting-notes.git
-cd dsh-meeting-notes && npm install   # 安装 sherpa-onnx-node（Qwen3-ASR 的 ONNX 运行时）
+dsh plugin --profile web add @iceleaf/dsh-meeting-notes
+# Desktop 版把 web 换成 desktop
 ```
 
-在 DSH 里安装本地 bundle（Plugin Manager 选择仓库目录，或让 Agent 执行 `plugin_manager install_bundle`，目标是该目录绝对路径），刷新页面后从左侧「会议记录」进入。
+装完重启 DSH（或刷新页面），左侧栏出现「会议记录」。首次录音会自动调用 `swiftc` 编译辅助程序（需 Xcode Command Line Tools），首次识别需在设置页「识别模型」里下载模型。
+
+本地开发：
+
+```bash
+git clone https://github.com/iceleaf916/dsh-meeting-notes.git
+cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/jsdom
+```
+
+然后在 DSH 里把仓库目录装成本地 bundle（Plugin Manager 选目录，或让 Agent 执行 `plugin_manager install_bundle`，目标是该目录绝对路径），刷新页面后从左侧「会议记录」进入。
 
 首次录音会自动编译辅助程序；首次识别若模型未就绪，打开设置页「识别模型」点「下载并准备」，选择下载源（自动 / ModelScope / Hugging Face / HF-Mirror）后等待进度完成即可。Qwen3-ASR 首次下载约 1.15 GB，ModelScope 在国内通常比 Hugging Face 快一个数量级。
 
@@ -127,6 +138,35 @@ cd dsh-meeting-notes && npm install   # 安装 sherpa-onnx-node（Qwen3-ASR 的 
 - `test/qwen3.mjs`：Qwen3 provider 纯逻辑测试（WAV 解析、切块上限、下载错误归类、provider 元数据与未准备状态），不联网、不加载模型。
 - UI 测试都从仓库根目录解析 `react` / `react-dom` / `jsdom`，直接 `node test/smoke.mjs`、`node test/models.mjs`、`node test/qwen3.mjs` 运行。
 - `test/preview.mjs`：视觉预览（同一套 jsdom + 真实 React，把主界面几个状态渲染成静态 HTML 到 `/tmp/mn-preview`，再用无头 Chrome 截图；需带 `--virtual-time-budget` 等动画结束）。
+
+### 发布到 npm
+
+仓库根目录的 `publish.sh` 负责整个发布链路，幂等可重复跑：
+
+```bash
+./publish.sh --dry-run   # 演练：自检 + 冒烟测试 + 打包预检，不写 registry
+./publish.sh             # 正式发布（未登录会就地引导 npm login）
+```
+
+本机 npm 账号是 `auth-and-writes` 二级验证，发布时必须有一个真实终端：npm 会打开浏览器让你授权（把 stdout 接到管道会让 npm 立刻以 `EOTP` 退出），所以脚本只在交互终端里把 stdio 原样交给 `npm publish`；CI 这类非交互场景用 `NPM_OTP=<验证码> ./publish.sh`（账号改用验证器 App 时）或直接用别的凭据。
+
+它按顺序检查：包名不能还在 `@local/`、不能带 `private: true`；`files` 里必需文件是否都进了 tarball（`qwen3.js` / `qwen3-worker.js` 漏过一次，装包后顶层 `import` 直接崩）；`client.js` 的模块 `id` 与 `cordis.patch.yml` 的 `name` 是否等于包名；`node --check` + `test/smoke.mjs`；README「当前版本」与 CHANGELOG 条目是否等于 `package.json` 的 version；该版本是否已被 registry 占用（npm 版本不可覆盖）；工作区是否有未提交改动。发布成功后自动 `npm view` 校验，并打印安装、profile 切换与打 tag 的后续命令。
+
+升版本按 z（修 bug）/ y（加功能）/ x（用户明确要求）走，`package.json`、`package-lock.json`、README「当前版本」、CHANGELOG 顶部条目四处必须同时改，否则脚本在第 3 步就拦下。
+
+### 自动发布（GitHub Actions）
+
+- `.github/workflows/ci.yml`：push `main` 或开 PR 时跑语法检查、三个测试与 `./publish.sh --ci --dry-run --skip-tests`，确认打出来的包与本地一致。
+- `.github/workflows/release.yml`：推 `v*` tag 即发布。先校验 tag 必须等于 `v<package.json version>`、tag 指向的提交必须在 `origin/main` 上，再跑测试并 `./publish.sh --ci --provenance --skip-tests`；该版本已被占用时脚本会自己拦下。
+- 认证两种：仓库 secret `NPM_TOKEN`（首次发布必须用它——npm 要求包已存在才能配可信发布），或发布过一次后在 npmjs.com → 包设置 → Trusted publishing 填 `iceleaf916` / `dsh-meeting-notes` / `release.yml`（环境名留空），之后 CI 走 OIDC，不再需要 token。
+- 发一个版本：
+
+```bash
+npm version patch --no-git-tag-version   # 或手改四处版本号
+# 补 CHANGELOG 顶部条目与 README「当前版本」
+git commit -am "chore: release v0.2.1"
+git tag v0.2.1 && git push origin main --follow-tags
+```
 
 ## 许可
 

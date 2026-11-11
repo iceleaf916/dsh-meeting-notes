@@ -1,14 +1,14 @@
 {
-  "name": "@local/dsh-meeting-notes",
+  "name": "@iceleaf/dsh-meeting-notes",
   "version": "0.2.0",
-  "private": true,
   "type": "module",
-  "description": "Local meeting recorder and transcriber for DeepSeek Harness",
+  "description": "Local meeting recorder and transcriber for DeepSeek Harness: system audio + mic mixing, offline ASR, one-click minutes",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
   },
   "files": [
     "index.js",
@@ -17,6 +17,8 @@
     "capture.js",
     "asr.js",
     "minutes.js",
+    "qwen3.js",
+    "qwen3-worker.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
@@ -24,7 +26,8 @@
     "recorder/build.sh",
     "recorder/README.md",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "dsh": {
     "bundle": {
@@ -40,10 +43,42 @@
       ]
     }
   },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0"
+  },
   "dependencies": {
+    "sherpa-onnx-node": "^2.0.1"
+  },
+  "devDependencies": {
     "jsdom": "^31.0.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "sherpa-onnx-node": "^2.0.1"
+    "react-dom": "^19.3.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iceleaf916/dsh-meeting-notes.git"
+  },
+  "homepage": "https://github.com/iceleaf916/dsh-meeting-notes#readme",
+  "bugs": {
+    "url": "https://github.com/iceleaf916/dsh-meeting-notes/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "meeting",
+    "minutes",
+    "transcription",
+    "asr",
+    "macos",
+    "screencapturekit",
+    "sensevoice",
+    "qwen3-asr"
+  ],
+  "author": "iceleaf <iceleaf916@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }

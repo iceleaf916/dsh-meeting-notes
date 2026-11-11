@@ -1,6 +1,6 @@
 - insert:
     - id: dsh-meeting-notes
-      name: '@local/dsh-meeting-notes'
+      name: '@iceleaf/dsh-meeting-notes'
       config:
         storageDir: '~/dsh-meetings'
         transcribeMode: after
