@@ -168,9 +168,9 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 
 本机 npm 账号是 `auth-and-writes` 二级验证，人工发布必须有一个真实终端：npm 会打开浏览器让你授权（把 stdout 接到管道会让 npm 立刻以 `EOTP` 退出），所以脚本只在交互终端里把 stdio 原样交给 `npm publish`。CI 不走这条路——发布用 npm 可信发布（OIDC），见下一节。`NPM_OTP=<验证码> ./publish.sh` 仍可用于账号换成验证器 App 的情况。
 
-首次发布（本仓库的 v0.2.0）就是人工跑的：新包在 registry 里会先建一个 `0.0.0-stage` 占位版本，正式版本随后才出现，所以脚本发布后会轮询 `npm view` 最多 240 秒再判定（v0.3.0 发布时 npm 传播比 90 秒窗口晚了半分钟，工作流因此误报失败）。
+首次发布（本仓库的 v0.2.0）就是人工跑的：新包在 registry 里会先建一个 `0.0.0-stage` 占位版本，正式版本随后才出现。脚本发布成功后会用 `npm view` 尽力校验最多 60 秒；查不到只告警、不改判失败——发布是否成功以 `npm publish` 退出码为准（v0.3.0 的 Release 曾因 registry 传播晚 30 秒误报失败，v0.4.0 又遇到镜像缓存读不到的情况）。
 
-它按顺序检查：包名不能还在 `@local/`、不能带 `private: true`；`files` 里必需文件是否都进了 tarball（`qwen3.js` / `qwen3-worker.js` 漏过一次，装包后顶层 `import` 直接崩）；`client.js` 的模块 `id` 与 `cordis.patch.yml` 的 `name` 是否等于包名；`node --check` + `test/smoke.mjs`；README「当前版本」与 CHANGELOG 条目是否等于 `package.json` 的 version；该版本是否已被 registry 占用（npm 版本不可覆盖；`--dry-run` 只告警，让 CI 在发版后仍能做打包预检）；工作区是否有未提交改动。发布成功后自动 `npm view` 校验，并打印安装、profile 切换与打 tag 的后续命令。
+它按顺序检查：包名不能还在 `@local/`、不能带 `private: true`；`files` 里必需文件是否都进了 tarball（`qwen3.js` / `qwen3-worker.js` 漏过一次，装包后顶层 `import` 直接崩）；`client.js` 的模块 `id` 与 `cordis.patch.yml` 的 `name` 是否等于包名；`node --check` + `test/smoke.mjs`；README「当前版本」与 CHANGELOG 条目是否等于 `package.json` 的 version；该版本是否已被 registry 占用（npm 版本不可覆盖；`--dry-run` 只告警，让 CI 在发版后仍能做打包预检）；工作区是否有未提交改动。发布成功后尽力 `npm view` 校验（查不到只告警，不判失败），并打印安装、profile 切换与打 tag 的后续命令。
 
 升版本按 z（修 bug）/ y（加功能）/ x（用户明确要求）走，`package.json`、`package-lock.json`、README「当前版本」、CHANGELOG 顶部条目四处必须同时改，否则脚本在第 3 步就拦下。
 

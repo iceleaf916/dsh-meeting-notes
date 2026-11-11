@@ -204,16 +204,23 @@ EOF
 fi
 
 # ---- 10. 校验与后续步骤 ----------------------------------------------------
-say "校验 registry（新包 / 首次发布会先建 0.0.0-stage 占位；npm 传播可能需要 2–3 分钟，最多等 240 秒）"
+# 校验是「尽力而为」：npm publish 的退出码是发布是否成功的唯一判据。
+# registry 读回可能受 CDN / 镜像缓存影响而延迟（v0.3.0 就出现过晚 30 秒），
+# 因此这里只用于提示，查不到不再让发布流程失败。
+say "校验 registry（尽力而为，不影响发布结果；传播/CDN 可能延迟，最多等 60 秒）"
 VERIFY_RC=1
-for ((_i = 0; _i < 48; _i++)); do
+for ((_i = 0; _i < 12; _i++)); do
   if npm view "$PKG@$VER" version --registry="$REG" >/dev/null 2>&1; then VERIFY_RC=0; break; fi
   sleep 5
 done
-if [ "$VERIFY_RC" -ne 0 ]; then
-  die "发布命令返回成功，但 240 秒内 registry 查不到 $VER：若是 staged 发布，需要维护者在 npmjs.com 放行；否则先看 https://www.npmjs.com/package/$PKG 再决定是否重发（npm 传播延迟也可能超过窗口，先直接看 npmjs.com 的版本页再判断）"
+if [ "$VERIFY_RC" -eq 0 ]; then
+  ok "registry 已可见：$PKG@$VER"
+  npm view "$PKG@$VER" version dist.tarball --registry="$REG" 2>/dev/null || true
+else
+  printf '\033[33m! npm publish 已返回成功，但 60 秒内 registry 还没查到 %s\033[0m\n' "$VER"
+  printf '  registry 传播 / CDN / 镜像缓存都可能延迟，以 npm publish 退出码为准，不再因此判定失败。\n'
+  printf '  稍后自查：https://www.npmjs.com/package/%s/v/%s\n' "$PKG" "$VER"
 fi
-npm view "$PKG@$VER" version dist.tarball --registry="$REG"
 
 printf '\n\033[32m✓ 发布完成\033[0m\n    https://www.npmjs.com/package/%s/v/%s\n' "$PKG" "$VER"
 cat <<EOF
