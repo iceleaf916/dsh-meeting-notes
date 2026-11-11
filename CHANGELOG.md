@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.0
+
+界面按 DSH 设计系统重做，交互改回常规形态。
+
+- 视觉：整体换成 DSH 的规格——14/22 基准字阶、12/18 辅助信息、16/24 弹窗标题、36/28 控件高度、`--dsw-radius-*` 圆角与 `--dsw-shadow-*` 阴影；颜色只引用运行时的 `--dsw-alias-*` 令牌（主色随 DSH 黑/白单色主题走，不再用自造蓝色）；卡片改用 hairline 边框（`.5px border-l3`）而不是灰底，选中项用 `interactive-bg-active`；输入框 34px/border-l4/layer-3 底，开关 36×20 圆点滑块，均与 DSH 组件一致。
+- 交互：临时结果提示改为 DSH Toast（顶部居中，3s 停留后淡出）；图标提示改用 DSH Tooltip（hover 500ms 延迟、focus 立即、Escape 关闭、贴边夹取），不再用原生 `title`；删除会议与放弃录音改为 DSH 风格 modal 确认框（mask + 焦点陷阱 + Escape + 取消/确认二选一），不再用按钮文案二次变形；设置页复用同一个弹窗组件，开关补 `role="switch"` / `aria-checked`。
+- 组件：插件内自行实现 Tooltip / Modal / ConfirmDialog / Toast（按 practices 规定不 require Harness Client 包，复制的是 DSH 原语的 markup、CSS 与交互行为）。
+- 测试：`test/preview.mjs` 的主题令牌换成 DSH 真实取值（含暗色），新增 confirm 与 toast 两组截图场景，并禁用动画保证截图为终态。
+
 ## v0.1.4
 
 接入 Qwen3-ASR：插件自带第二个本地 ASR 模型，可在设置页模型列表里与 SenseVoice 切换。

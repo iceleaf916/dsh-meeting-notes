@@ -311,6 +311,74 @@ if (minutesTab) {
 }
 
 console.log(process.exitCode ? 'SMOKE FAILED' : 'SMOKE OK');
+// DSK 原语：Tooltip（hover 500ms）→ ConfirmDialog（勾选后才能删）→ Toast（复制成功）
+const gear2 = [...container.querySelectorAll('button')].find((el) => (el.getAttribute('aria-label') || '') === '设置');
+if (gear2) {
+  await act(async () => {
+    gear2.dispatchEvent(new window.MouseEvent('pointerover', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 600));
+  });
+  const tip = container.querySelector('[role="tooltip"]');
+  ok(!!tip && (tip.textContent || '').includes('设置'), 'hover 500ms 后出现 DSH tooltip');
+  await act(async () => {
+    gear2.dispatchEvent(new window.MouseEvent('pointerout', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 30));
+  });
+  ok(!container.querySelector('[role="tooltip"]'), '移出后 tooltip 消失');
+}
+
+const delBtn = [...container.querySelectorAll('button')].find((el) => (el.getAttribute('aria-label') || '') === '删除');
+ok(!!delBtn, '找到删除按钮');
+if (delBtn) {
+  await act(async () => {
+    delBtn.click();
+    await new Promise((r) => setTimeout(r, 120));
+  });
+  const confirmDialog = container.querySelector('[role="dialog"]');
+  ok(!!confirmDialog, '删除走 modal 确认框（role=dialog）');
+  ok(!confirmDialog.querySelector('input[type="checkbox"]'), '确认框是普通二选一，没有额外勾选门槛');
+  const confirmBtn = [...confirmDialog.querySelectorAll('button')].find((el) => (el.textContent || '').includes('删除会议'));
+  ok(!!confirmBtn && !confirmBtn.disabled, '确认按钮默认可点');
+  const cancelBtn = [...confirmDialog.querySelectorAll('button')].find((el) => (el.textContent || '').trim() === '取消');
+  await act(async () => {
+    if (cancelBtn) cancelBtn.click();
+    await new Promise((r) => setTimeout(r, 80));
+  });
+  ok(!container.querySelector('[role="dialog"]'), '取消后确认框关闭');
+  ok(!calls.some((c) => c.method === 'DELETE'), '取消后没有发出 DELETE');
+}
+
+// 真正点确认 -> DELETE /meetings/:id
+if (delBtn) {
+  await act(async () => {
+    delBtn.click();
+    await new Promise((r) => setTimeout(r, 120));
+  });
+  const dialog2 = container.querySelector('[role="dialog"]');
+  const goBtn = dialog2 && [...dialog2.querySelectorAll('button')].find((el) => (el.textContent || '').includes('删除会议'));
+  await act(async () => {
+    if (goBtn) goBtn.click();
+    await new Promise((r) => setTimeout(r, 160));
+  });
+  const del = calls.find((c) => c.method === 'DELETE' && c.url.includes('/dsh-meeting-notes/meetings/'));
+  ok(!!del, '确认删除后发出 DELETE /meetings/:id');
+  ok(!container.querySelector('[role="dialog"]'), '删除后确认框关闭');
+}
+
+Object.defineProperty(window.navigator, 'clipboard', {
+  value: { writeText: async () => {} },
+  configurable: true,
+});
+const copyBtn = [...container.querySelectorAll('button')].find((el) => (el.textContent || '').includes('复制文稿'));
+if (copyBtn) {
+  await act(async () => {
+    copyBtn.click();
+    await new Promise((r) => setTimeout(r, 120));
+  });
+  const toast = container.querySelector('[role="status"]');
+  ok(!!toast && (toast.textContent || '').includes('已复制'), '复制后出现 DSH toast 提示');
+}
+
 await act(async () => {
   root.unmount();
 });

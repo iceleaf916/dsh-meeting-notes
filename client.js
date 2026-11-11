@@ -22,6 +22,7 @@ window.__ModuleLoader__.load({
       loadStateFailed: '读取会议记录状态失败',
       platformUnsupported: '当前平台暂不支持录制系统声音与麦克风，只能浏览已有会议。',
       modelLabel: '识别模型',
+      modelHint: '查看或切换转写模型',
       prepare: '下载模型',
       prepareRetry: '重新准备',
       prepareStarted: '已开始准备本地模型，进度见模型状态。',
@@ -63,7 +64,6 @@ window.__ModuleLoader__.load({
       stop: '停止录音',
       stopping: '正在停止…',
       cancel: '放弃本次录音',
-      cancelConfirm: '确认放弃',
       recordingIdle: '待录音',
       recordingActive: '录音中',
       elapsed: '已录制',
@@ -115,11 +115,15 @@ window.__ModuleLoader__.load({
       copied: '文稿已复制',
       copyFailed: '复制失败，请手动选择文本',
       deleteAction: '删除',
-      deleteConfirm: '确认删除',
       deleting: '删除中…',
-      deleteHint: '删除会移除该会议的音频与文稿，且无法恢复。',
       deleteOk: '会议已删除',
       deleteFailed: '删除失败',
+      confirmDeleteTitle: '删除这场会议？',
+      confirmDeleteBody: '「{title}」的录音、文稿与纪要都会被移除，此操作无法撤销。',
+      confirmDeleteGo: '删除会议',
+      confirmCancelTitle: '放弃本次录音？',
+      confirmCancelBody: '当前录音以及已经产生的实时转写都会被丢弃，此操作无法撤销。',
+      confirmCancelGo: '放弃录音',
       detailLoadFailed: '读取会议详情失败',
       meetingPath: '会议目录',
       duration: '时长',
@@ -218,6 +222,7 @@ window.__ModuleLoader__.load({
       loadStateFailed: 'Failed to load meeting notes state',
       platformUnsupported: 'Recording system audio and microphone is not supported on this platform yet; browsing existing meetings still works.',
       modelLabel: 'Model',
+      modelHint: 'View or switch transcription models',
       prepare: 'Download model',
       prepareRetry: 'Retry preparation',
       prepareStarted: 'Model preparation started; watch the model status.',
@@ -259,7 +264,6 @@ window.__ModuleLoader__.load({
       stop: 'Stop recording',
       stopping: 'Stopping…',
       cancel: 'Discard recording',
-      cancelConfirm: 'Confirm discard',
       recordingIdle: 'Ready',
       recordingActive: 'Recording',
       elapsed: 'Elapsed',
@@ -311,11 +315,15 @@ window.__ModuleLoader__.load({
       copied: 'Transcript copied',
       copyFailed: 'Copy failed; select the text manually',
       deleteAction: 'Delete',
-      deleteConfirm: 'Confirm delete',
       deleting: 'Deleting…',
-      deleteHint: 'Deleting removes this meeting audio and transcripts permanently.',
       deleteOk: 'Meeting deleted',
       deleteFailed: 'Failed to delete meeting',
+      confirmDeleteTitle: 'Delete this meeting?',
+      confirmDeleteBody: 'The audio, transcript and minutes of “{title}” will be removed permanently.',
+      confirmDeleteGo: 'Delete meeting',
+      confirmCancelTitle: 'Discard this recording?',
+      confirmCancelBody: 'The current recording and any live transcript will be discarded permanently.',
+      confirmCancelGo: 'Discard recording',
       detailLoadFailed: 'Failed to load meeting details',
       meetingPath: 'Meeting folder',
       duration: 'Duration',
@@ -402,94 +410,113 @@ window.__ModuleLoader__.load({
 
     const CSS = `
 .mn-root{
-  --mn-bg:var(--dsw-alias-bg-base);
-  --mn-surface:var(--dsw-alias-bg-layer-1);
-  --mn-surface-2:var(--dsw-alias-bg-layer-2);
-  --mn-overlay:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-1));
-  --mn-line:var(--dsw-alias-border-l1);
-  --mn-line-strong:var(--dsw-alias-border-l2);
-  --mn-text:var(--dsw-alias-label-primary);
-  --mn-muted:var(--dsw-alias-label-secondary);
-  --mn-accent:var(--dsw-alias-brand-primary);
-  --mn-hot:var(--dsw-alias-state-error-primary,#e5484d);
-  --mn-warn:var(--dsw-alias-state-warn-primary,#d97706);
-  --mn-ok:var(--dsw-alias-state-success-primary,#2f9e6b);
+  --mn-line:var(--dsw-alias-border-l1,#0000000a);
+  --mn-line-strong:var(--dsw-alias-border-l2,#0000001a);
+  --mn-text:var(--dsw-alias-label-primary,#0f1115);
+  --mn-muted:var(--dsw-alias-label-secondary,#61666b);
+  --mn-tertiary:var(--dsw-alias-label-tertiary,#81858c);
+  --mn-accent:var(--dsw-alias-brand-primary,#0f1115);
+  --mn-hot:var(--dsw-alias-state-error-primary,#dc2626);
+  --mn-warn:var(--dsw-alias-state-warn-primary,#f59e0b);
+  --mn-ok:var(--dsw-alias-state-success-primary,#22c55e);
+  --mn-fill:var(--dsw-alias-bg-layer-1,#ffffff);
+  --mn-fill-2:var(--dsw-alias-bg-layer-2,#ffffff);
+  --mn-layer-3:var(--dsw-alias-bg-layer-3,#fff);
+  --mn-module:var(--dsw-alias-bg-module-platform,#f5f6f7);
+  --mn-hover:var(--dsw-alias-interactive-bg-hover,#2631480f);
+  --mn-active:var(--dsw-alias-interactive-bg-active,#2631481a);
+  --mn-skel:var(--dsw-alias-bg-skeleton,#0000000a);
+  --mn-radius-sm:var(--dsw-radius-sm,8px);
+  --mn-radius-md:var(--dsw-radius-md,12px);
+  --mn-radius-lg:var(--dsw-radius-lg,16px);
+  --mn-radius-panel:var(--dsw-radius-panel,28px);
+  --mn-shadow-1:var(--dsw-shadow-lv1,0 2px 4px 0 rgba(0,0,0,.05));
+  --mn-shadow-3:var(--dsw-shadow-lv3,0 0 1px 0 rgba(0,0,0,.2),0 12px 32px 0 rgba(0,0,0,.08));
+  --mn-elevation:var(--dsw-elevation-prominent,0 3px 8px 0 rgba(0,0,0,.05),0 0 20px 0 rgba(0,0,0,.05));
+  --mn-mask:var(--dsw-alias-bg-mask-1,#0000003d);
+  --mn-blur:var(--dsw-mask-blur,none);
+  --mn-tooltip-bg:var(--dsw-alias-tooltip-bg,#2c2c2e);
+  --mn-toast-bg:var(--dsw-alias-toast-bg,#353638);
+  --mn-toast-label:var(--dsw-alias-toast-label,#fff);
+  --mn-ease:var(--ds-ease-in-out,cubic-bezier(.4,0,.2,1));
+  --mn-dur:var(--ds-transition-duration,.2s);
   position:relative;
   min-height:100%;
   overflow:auto;
-  background:var(--mn-bg);
+  background:var(--dsw-alias-bg-base,#fff);
   color:var(--mn-text);
   font-family:inherit;
-  font-size:13.5px;
-  line-height:1.6;
+  font-size:14px;
+  line-height:22px;
   -webkit-font-smoothing:antialiased;
 }
 .mn-root *{box-sizing:border-box}
 .mn-root button{font-family:inherit}
-.mn-shell{max-width:1200px;margin:0 auto;padding:24px 28px 56px}
+.mn-shell{max-width:1120px;margin:0 auto;padding:24px 24px 48px}
 
 /* ---------- top bar ---------- */
 .mn-topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
-.mn-brand{display:flex;align-items:center;gap:12px;min-width:0}
-.mn-brand-mark{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;flex:0 0 auto;color:var(--mn-accent);background:color-mix(in srgb,var(--mn-accent) 12%,transparent)}
-.mn-title{margin:0;font-size:18px;line-height:1.25;font-weight:650;letter-spacing:-.015em}
-.mn-sub{margin:1px 0 0;font-size:11.5px;color:var(--mn-muted);line-height:1.4}
-.mn-topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.mn-chip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--mn-line);background:var(--mn-surface);color:var(--mn-muted);font-size:11.5px;white-space:nowrap;max-width:100%}
-.mn-chip b{font-weight:600;color:var(--mn-text);overflow:hidden;text-overflow:ellipsis}
-.mn-chip .mn-sep{opacity:.45}
+.mn-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mn-brand-mark{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:var(--mn-radius-sm);flex:0 0 auto;color:var(--mn-accent);background:var(--mn-module)}
+.mn-title{margin:0;font-size:16px;line-height:24px;font-weight:600}
+.mn-sub{margin:0;font-size:12px;line-height:18px;color:var(--mn-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mn-topbar-right{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.mn-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--mn-radius-sm);border:.5px solid var(--dsw-alias-border-l3,var(--mn-line-strong));background:transparent;color:var(--mn-muted);font-family:inherit;font-size:12px;line-height:18px;white-space:nowrap;max-width:100%;cursor:pointer;transition:background var(--mn-dur) var(--mn-ease)}
+.mn-chip:hover{background:var(--mn-hover)}
+.mn-chip b{font-weight:500;color:var(--mn-text);overflow:hidden;text-overflow:ellipsis}
+.mn-chip .mn-sep{opacity:.5}
 
 /* ---------- buttons ---------- */
-.mn-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--mn-text);font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .16s ease-out,border-color .16s ease-out,color .16s ease-out,transform .12s ease-out}
-.mn-btn:active{transform:translateY(1px)}
-.mn-btn:focus-visible{outline:2px solid color-mix(in srgb,var(--mn-accent) 55%,transparent);outline-offset:2px}
-.mn-btn:disabled{opacity:.5;cursor:default;transform:none}
-.mn-btn[data-variant="primary"]{background:var(--mn-accent);color:var(--mn-bg);font-weight:600}
-.mn-btn[data-variant="primary"]:hover:not(:disabled){filter:brightness(1.06)}
-.mn-btn[data-variant="stop"]{background:var(--mn-hot);color:#fff;font-weight:600}
-.mn-btn[data-variant="stop"]:hover:not(:disabled){filter:brightness(1.06)}
-.mn-btn[data-variant="tonal"]{color:var(--mn-accent);background:color-mix(in srgb,var(--mn-accent) 11%,transparent);border-color:color-mix(in srgb,var(--mn-accent) 24%,transparent);font-weight:600}
-.mn-btn[data-variant="tonal"]:hover:not(:disabled){background:color-mix(in srgb,var(--mn-accent) 17%,transparent)}
+.mn-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;height:36px;padding:0 14px;border:0;border-radius:var(--mn-radius-md);background:transparent;color:var(--mn-text);font-size:14px;line-height:22px;cursor:pointer;white-space:nowrap;transition:background var(--mn-dur) var(--mn-ease),box-shadow var(--mn-dur) var(--mn-ease),opacity var(--mn-dur) var(--mn-ease)}
+.mn-btn:disabled{cursor:not-allowed;opacity:.4}
+.mn-btn:focus-visible{outline:2px solid color-mix(in srgb,var(--mn-accent) 45%,transparent);outline-offset:1px}
+.mn-btn[data-variant="primary"]{background:var(--dsw-alias-button-primary-fill,var(--mn-accent));color:var(--dsw-alias-label-primary-foreground,#fff)}
+.mn-btn[data-variant="primary"]:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover,color-mix(in srgb,var(--mn-accent) 86%,#000))}
+.mn-btn[data-variant="outline"]{box-shadow:inset 0 0 0 .5px var(--mn-line-strong)}
+.mn-btn[data-variant="outline"]:hover:not(:disabled){background:var(--mn-hover)}
 .mn-btn[data-variant="ghost"]{color:var(--mn-muted)}
-.mn-btn[data-variant="ghost"]:hover:not(:disabled){color:var(--mn-text);background:var(--mn-surface-2)}
-.mn-btn[data-variant="danger"]{color:var(--mn-hot)}
-.mn-btn[data-variant="danger"]:hover:not(:disabled){background:color-mix(in srgb,var(--mn-hot) 10%,transparent)}
-.mn-btn[data-size="small"]{height:29px;padding:0 10px;font-size:12px;border-radius:8px}
-.mn-btn[data-size="block"]{width:100%;height:38px;font-size:13px}
-.mn-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--mn-muted);cursor:pointer;transition:background .16s,color .16s}
-.mn-icon-btn:hover{background:var(--mn-surface-2);color:var(--mn-text)}
-.mn-icon-btn:focus-visible{outline:2px solid color-mix(in srgb,var(--mn-accent) 55%,transparent);outline-offset:2px}
+.mn-btn[data-variant="ghost"]:hover:not(:disabled){background:var(--mn-hover);color:var(--mn-text)}
+.mn-btn[data-tone="danger"]{color:var(--mn-hot)}
+.mn-btn[data-tone="danger"]:hover:not(:disabled){background:color-mix(in srgb,var(--mn-hot) 8%,transparent);color:var(--mn-hot)}
+.mn-btn[data-size="small"]{height:28px;padding:0 10px;border-radius:var(--mn-radius-sm);font-size:12px;line-height:18px}
+.mn-btn[data-size="block"]{width:100%}
+.mn-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:var(--mn-radius-sm);background:transparent;color:var(--mn-muted);cursor:pointer;transition:background var(--mn-dur) var(--mn-ease),color var(--mn-dur) var(--mn-ease)}
+.mn-icon-btn:hover:not(:disabled){background:var(--mn-hover);color:var(--mn-text)}
+.mn-icon-btn:disabled{cursor:not-allowed;opacity:.4}
+.mn-icon-btn-danger{color:var(--mn-tertiary)}
+.mn-icon-btn-danger:hover:not(:disabled){background:color-mix(in srgb,var(--mn-hot) 9%,transparent);color:var(--mn-hot)}
+.mn-icon-btn:focus-visible,.mn-chip:focus-visible{outline:2px solid color-mix(in srgb,var(--mn-accent) 45%,transparent);outline-offset:1px}
 
-/* ---------- banners ---------- */
-.mn-banner{display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;padding:9px 12px;border-radius:10px;font-size:12px;line-height:1.55}
-.mn-banner[data-tone="error"]{color:var(--mn-hot);background:color-mix(in srgb,var(--mn-hot) 9%,transparent)}
-.mn-banner[data-tone="warn"]{color:var(--mn-warn);background:color-mix(in srgb,var(--mn-warn) 10%,transparent)}
-.mn-banner[data-tone="info"]{color:var(--mn-muted);background:var(--mn-surface-2)}
+/* ---------- banners（只在需要常驻的错误/警告时使用） ---------- */
+.mn-banner{display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;padding:10px 12px;border-radius:var(--mn-radius-md);font-size:13px;line-height:20px}
+.mn-banner[data-tone="error"]{color:var(--mn-hot);background:color-mix(in srgb,var(--mn-hot) 8%,transparent)}
+.mn-banner[data-tone="warn"]{color:var(--mn-warn);background:color-mix(in srgb,var(--mn-warn) 8%,transparent)}
+.mn-banner[data-tone="info"]{color:var(--mn-muted);background:var(--mn-module)}
 .mn-banner span{flex:1;min-width:0;word-break:break-word}
-.mn-banner button{flex:0 0 auto;border:0;background:transparent;color:inherit;font:inherit;font-size:11.5px;cursor:pointer;opacity:.75;padding:0 2px}
+.mn-banner button{flex:0 0 auto;border:0;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer;opacity:.7;padding:0 2px}
 .mn-banner button:hover{opacity:1}
 
 /* ---------- layout ---------- */
-.mn-layout{display:grid;grid-template-columns:minmax(0,336px) minmax(0,1fr);gap:28px;align-items:start}
+.mn-layout{display:grid;grid-template-columns:minmax(0,332px) minmax(0,1fr);gap:24px;align-items:start}
 .mn-rail{position:sticky;top:16px;display:flex;flex-direction:column;gap:20px;min-width:0}
 @media (max-width:1020px){
   .mn-layout{grid-template-columns:minmax(0,1fr);gap:24px}
   .mn-rail{position:static}
-  .mn-shell{padding:18px 18px 40px}
+  .mn-shell{padding:18px 16px 40px}
 }
 
 /* ---------- record panel ---------- */
-.mn-record{background:var(--mn-surface);border-radius:16px;padding:18px}
+.mn-record{background:var(--mn-fill);border:.5px solid var(--dsw-alias-border-l3,var(--mn-line));border-radius:var(--mn-radius-lg);padding:16px}
 .mn-record-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.mn-record-head h2{margin:0;font-size:13px;font-weight:650;letter-spacing:.01em;color:var(--mn-muted)}
-.mn-seg{display:inline-flex;gap:2px;padding:2px;border-radius:9px;background:var(--mn-surface-2)}
-.mn-seg button{height:24px;padding:0 9px;border:0;border-radius:7px;background:transparent;color:var(--mn-muted);font-size:11.5px;cursor:pointer;transition:background .16s,color .16s}
-.mn-seg button[data-active="1"]{background:var(--mn-bg);color:var(--mn-text);font-weight:600;box-shadow:0 1px 2px color-mix(in srgb,var(--mn-text) 12%,transparent)}
-.mn-seg button:disabled{cursor:default;opacity:.6}
-.mn-timer-row{display:flex;align-items:baseline;gap:10px;margin:14px 0 2px}
-.mn-timer{font-size:38px;line-height:1;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.mn-record-head h2{margin:0;font-size:12px;line-height:18px;font-weight:600;color:var(--mn-muted)}
+.mn-seg{display:inline-grid;grid-auto-flow:column;align-items:center;gap:2px;padding:2px;border-radius:var(--mn-radius-md);background:var(--mn-module)}
+.mn-seg button{height:24px;padding:0 8px;border:0;border-radius:calc(var(--mn-radius-md) - 4px);background:transparent;color:var(--mn-muted);font-size:12px;line-height:18px;font-family:inherit;cursor:pointer;white-space:nowrap;transition:background var(--mn-dur) var(--mn-ease),color var(--mn-dur) var(--mn-ease)}
+.mn-seg button[data-active="1"]{background:var(--mn-layer-3);color:var(--mn-text);font-weight:500;box-shadow:inset 0 0 0 .5px var(--dsw-alias-border-l3,var(--mn-line-strong))}
+.mn-seg button:disabled{cursor:not-allowed;opacity:.5}
+.mn-timer-row{display:flex;align-items:center;gap:10px;margin:16px 0 0}
+.mn-timer{font-size:34px;line-height:38px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .mn-timer[data-active="1"]{color:var(--mn-hot)}
-.mn-recstate{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mn-muted);white-space:nowrap}
+.mn-recstate{display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:18px;color:var(--mn-muted);white-space:nowrap}
 .mn-recstate[data-active="1"]{color:var(--mn-hot)}
 .mn-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:var(--mn-muted);display:inline-block}
 .mn-dot[data-tone="ok"]{background:var(--mn-ok)}
@@ -499,163 +526,185 @@ window.__ModuleLoader__.load({
 .mn-dot[data-tone="active"]{background:var(--mn-hot);animation:mn-pulse 1.8s ease-out infinite}
 @keyframes mn-blink{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes mn-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--mn-hot) 45%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.mn-levels{display:flex;flex-direction:column;gap:7px;margin:16px 0 0}
-.mn-level{display:grid;grid-template-columns:52px minmax(0,1fr) 34px;align-items:center;gap:8px;font-size:11px;color:var(--mn-muted)}
+.mn-levels{display:flex;flex-direction:column;gap:8px;margin:16px 0 0}
+.mn-level{display:grid;grid-template-columns:58px minmax(0,1fr) 36px;align-items:center;gap:8px;font-size:12px;line-height:18px;color:var(--mn-muted)}
 .mn-level-pct{text-align:right;font-variant-numeric:tabular-nums}
-.mn-level-track{height:4px;border-radius:999px;background:var(--mn-surface-2);overflow:hidden}
-.mn-level-fill{height:100%;border-radius:999px;background:var(--mn-accent);transition:width .12s linear;opacity:.85}
+.mn-level-track{height:4px;border-radius:999px;background:var(--mn-skel);overflow:hidden}
+.mn-level-fill{height:100%;border-radius:999px;background:var(--mn-accent);transition:width .12s linear}
 .mn-record-actions{display:flex;align-items:center;gap:8px;margin-top:16px}
 .mn-record-actions .mn-btn[data-size="block"]{flex:1 1 auto}
-.mn-hint{margin:12px 0 0;font-size:11.5px;line-height:1.55;color:var(--mn-muted)}
-.mn-live{margin-top:14px;padding-top:12px;border-top:1px solid var(--mn-line)}
-.mn-live-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:11.5px;color:var(--mn-muted);font-weight:600;letter-spacing:.01em}
-.mn-live-list{max-height:168px;overflow:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:5px}
-.mn-live-line{display:flex;gap:8px;font-size:12.5px;line-height:1.6}
-.mn-live-ts{flex:0 0 auto;min-width:34px;color:var(--mn-muted);font-variant-numeric:tabular-nums;font-size:10.5px;padding-top:2px}
+.mn-record-actions .mn-btn[data-size="small"]{flex:0 0 auto}
+.mn-hint{margin:12px 0 0;font-size:12px;line-height:18px;color:var(--mn-muted)}
+.mn-live{margin-top:16px;padding-top:14px;border-top:1px solid var(--mn-line)}
+.mn-live-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;line-height:18px;color:var(--mn-muted);font-weight:600}
+.mn-live-list{max-height:168px;overflow:auto;scrollbar-width:thin;display:flex;flex-direction:column;gap:6px}
+.mn-live-line{display:flex;gap:8px;font-size:13px;line-height:20px}
+.mn-live-ts{flex:0 0 auto;min-width:36px;color:var(--mn-tertiary);font-variant-numeric:tabular-nums;font-size:12px;padding-top:1px}
 .mn-live-text{min-width:0;word-break:break-word}
-.mn-live-partial{color:var(--mn-muted);font-style:italic}
-.mn-live-empty{font-size:11.5px;color:var(--mn-muted);padding:2px 0}
+.mn-live-partial{color:var(--mn-muted)}
+.mn-live-empty{font-size:12px;line-height:18px;color:var(--mn-muted);padding:2px 0}
 
 /* ---------- meetings list ---------- */
-.mn-rail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px;margin-bottom:2px}
-.mn-rail-head h2{margin:0;font-size:13px;font-weight:650;letter-spacing:.01em;color:var(--mn-muted)}
-.mn-count{font-size:11.5px;color:var(--mn-muted);font-variant-numeric:tabular-nums;padding-right:10px}
+.mn-rail-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px;margin-bottom:4px}
+.mn-rail-head h2{margin:0;font-size:12px;line-height:18px;font-weight:600;color:var(--mn-muted)}
+.mn-count{font-size:12px;line-height:18px;color:var(--mn-muted);font-variant-numeric:tabular-nums;padding-right:10px}
 .mn-items{display:flex;flex-direction:column;gap:2px;max-height:min(46vh,460px);overflow:auto;scrollbar-width:thin;margin:0 -8px;padding:0 8px}
-.mn-item{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;border:0;border-radius:10px;background:transparent;color:var(--mn-text);font-size:13px;padding:9px 10px;cursor:pointer;transition:background .14s}
-.mn-item:hover{background:var(--mn-surface-2)}
-.mn-item[data-active="1"]{background:var(--mn-surface-2);box-shadow:inset 2px 0 0 var(--mn-accent)}
-.mn-item-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
-.mn-item-title{font-weight:550;line-height:1.4;word-break:break-word;display:block}
-.mn-item-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--mn-muted);font-size:11px;font-variant-numeric:tabular-nums}
-.mn-item-meta .mn-sep{opacity:.45}
-.mn-item-flag{flex:0 0 auto;color:var(--mn-muted);display:flex;align-items:center;padding-top:1px}
+.mn-item{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;border:0;border-radius:var(--mn-radius-md);background:transparent;color:var(--mn-text);font-size:14px;line-height:22px;padding:8px 10px;cursor:pointer;transition:background var(--mn-dur) var(--mn-ease)}
+.mn-item:hover{background:var(--mn-hover)}
+.mn-item:focus-visible{outline:2px solid color-mix(in srgb,var(--mn-accent) 45%,transparent);outline-offset:-2px}
+.mn-item[data-active="1"]{background:var(--mn-active)}
+.mn-item-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.mn-item-title{font-weight:500;word-break:break-word;display:block}
+.mn-item-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--mn-muted);font-size:12px;line-height:18px;font-variant-numeric:tabular-nums}
+.mn-item-meta .mn-sep{opacity:.5}
+.mn-item-flag{flex:0 0 auto;color:var(--mn-tertiary);display:flex;align-items:center;padding-top:3px}
 
 /* ---------- detail ---------- */
 .mn-detail{min-width:0;padding-top:2px}
 .mn-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .mn-detail-title{min-width:0;flex:1 1 320px}
-.mn-detail-title h2{margin:0 0 4px;font-size:21px;line-height:1.3;font-weight:650;letter-spacing:-.02em;word-break:break-word}
-.mn-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--mn-muted);font-size:11.5px;font-variant-numeric:tabular-nums}
-.mn-meta .mn-sep{opacity:.45}
+.mn-detail-title h2{margin:0 0 4px;font-size:20px;line-height:28px;font-weight:600;letter-spacing:-.01em;word-break:break-word}
+.mn-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--mn-muted);font-size:12px;line-height:18px;font-variant-numeric:tabular-nums}
+.mn-meta .mn-sep{opacity:.5}
 .mn-detail-actions{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto}
-.mn-detail-actions .mn-btn{margin-left:2px}
-.mn-audio{display:flex;align-items:center;gap:12px;margin:16px 0 4px;padding:10px 14px;border-radius:12px;background:var(--mn-surface)}
-.mn-audio-label{flex:0 0 auto;font-size:11.5px;font-weight:600;color:var(--mn-muted);letter-spacing:.02em}
-.mn-audio audio{flex:1 1 auto;min-width:0;height:32px;display:block;color-scheme:inherit}
-.mn-audio audio::-webkit-media-controls-panel{background:var(--mn-surface)}
-.mn-path{display:block;margin-top:8px;font-size:10.5px;color:var(--mn-muted);word-break:break-all}
+.mn-audio{display:flex;align-items:center;gap:12px;margin:16px 0 4px;padding:8px 12px;border-radius:var(--mn-radius-md);border:.5px solid var(--dsw-alias-border-l3,var(--mn-line));background:var(--mn-fill)}
+.mn-audio-label{flex:0 0 auto;font-size:12px;line-height:18px;font-weight:600;color:var(--mn-muted)}
+.mn-audio-el{flex:1 1 auto;min-width:0;height:32px;display:block;color-scheme:inherit}
+.mn-audio-el::-webkit-media-controls-panel{background:var(--mn-fill)}
+.mn-path{display:block;margin-top:10px;font-size:12px;line-height:18px;color:var(--mn-tertiary);word-break:break-all}
 
 /* ---------- tabs ---------- */
-.mn-tabs{display:flex;align-items:center;gap:20px;margin-top:18px;border-bottom:1px solid var(--mn-line)}
-.mn-tab{position:relative;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 1px;border:0;background:transparent;color:var(--mn-muted);font-size:12.5px;font-weight:600;cursor:pointer}
+.mn-tabs{display:flex;align-items:center;gap:24px;margin-top:20px;border-bottom:1px solid var(--mn-line)}
+.mn-tab{position:relative;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0;border:0;background:transparent;color:var(--mn-muted);font-size:14px;line-height:22px;font-weight:500;cursor:pointer}
 .mn-tab:hover{color:var(--mn-text)}
-.mn-tab[data-active="1"]{color:var(--mn-text)}
+.mn-tab[data-active="1"]{color:var(--mn-text);font-weight:600}
 .mn-tab[data-active="1"]::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;background:var(--mn-accent)}
-.mn-tab-count{font-size:10.5px;font-weight:600;color:var(--mn-muted);font-variant-numeric:tabular-nums}
+.mn-tab-count{font-size:12px;line-height:18px;font-weight:500;color:var(--mn-muted);font-variant-numeric:tabular-nums}
 .mn-tab-dot{width:5px;height:5px;border-radius:50%;background:var(--mn-ok)}
 
 /* ---------- document ---------- */
-.mn-doc{margin-top:18px;max-width:76ch;font-size:14px;line-height:1.75}
-.mn-doc-h1{margin:2px 0 10px;font-size:19px;line-height:1.35;font-weight:650;letter-spacing:-.015em}
-.mn-doc-h2{margin:26px 0 8px;font-size:15px;line-height:1.4;font-weight:650;letter-spacing:-.01em}
+.mn-doc{margin-top:20px;max-width:76ch;font-size:14px;line-height:24px}
+.mn-doc-h1{margin:2px 0 12px;font-size:18px;line-height:26px;font-weight:600;letter-spacing:-.01em}
+.mn-doc-h2{margin:24px 0 8px;font-size:16px;line-height:24px;font-weight:600}
 .mn-doc-h2:first-child{margin-top:2px}
-.mn-doc-h3{margin:18px 0 6px;font-size:13.5px;font-weight:650}
-.mn-doc-p{margin:0 0 9px;white-space:pre-wrap;word-break:break-word}
+.mn-doc-h3{margin:18px 0 6px;font-size:14px;line-height:22px;font-weight:600}
+.mn-doc-p{margin:0 0 8px;white-space:pre-wrap;word-break:break-word}
 .mn-doc-ul,.mn-doc-ol{margin:0 0 10px;padding-left:20px}
-.mn-doc-ul li,.mn-doc-ol li{margin:0 0 4px;line-height:1.7}
+.mn-doc-ul li,.mn-doc-ol li{margin:0 0 4px;line-height:23px}
 .mn-doc-quote{margin:0 0 10px;padding:2px 0 2px 12px;border-left:2px solid var(--mn-line-strong);color:var(--mn-muted)}
-.mn-doc-line{display:flex;gap:12px;margin:0 0 5px}
-.mn-doc-ts{flex:0 0 auto;min-width:36px;color:var(--mn-muted);font-variant-numeric:tabular-nums;font-size:11.5px;padding-top:3px}
+.mn-doc-line{display:flex;gap:12px;margin:0 0 4px}
+.mn-doc-ts{flex:0 0 auto;min-width:38px;color:var(--mn-tertiary);font-variant-numeric:tabular-nums;font-size:12px;line-height:20px;padding-top:2px}
 .mn-doc-text{min-width:0;word-break:break-word;white-space:pre-wrap}
-.mn-doc b{font-weight:650}
-.mn-doc code{padding:1px 5px;border-radius:5px;background:var(--mn-surface-2);font-size:12px}
-.mn-table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:12.5px;line-height:1.6}
-.mn-table th{text-align:left;font-weight:600;color:var(--mn-muted);padding:7px 10px;border-bottom:1px solid var(--mn-line-strong);white-space:nowrap}
-.mn-table td{padding:7px 10px;border-bottom:1px solid var(--mn-line);vertical-align:top}
-.mn-doc-empty{color:var(--mn-muted);font-size:12.5px;margin-top:18px}
-.mn-doc-empty b{display:block;margin-bottom:4px;font-size:13.5px;color:var(--mn-text);font-weight:600}
+.mn-doc b{font-weight:600}
+.mn-doc code{padding:1px 5px;border-radius:var(--mn-radius-xs,4px);background:var(--mn-skel);font-size:13px}
+.mn-table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:13px;line-height:20px}
+.mn-table th{text-align:left;font-weight:600;color:var(--mn-muted);padding:8px 10px;border-bottom:1px solid var(--mn-line-strong);white-space:nowrap}
+.mn-table td{padding:8px 10px;border-bottom:1px solid var(--mn-line);vertical-align:top}
+.mn-doc-empty{color:var(--mn-muted);font-size:14px;line-height:22px;margin-top:20px}
+.mn-doc-empty b{display:block;margin-bottom:4px;font-size:14px;line-height:22px;color:var(--mn-text);font-weight:600}
 
 /* ---------- states ---------- */
 .mn-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:56px 24px;color:var(--mn-muted)}
-.mn-empty-mark{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--mn-surface);color:var(--mn-muted);margin-bottom:2px}
-.mn-empty b{font-size:14px;color:var(--mn-text);font-weight:600}
-.mn-empty span{font-size:12px;line-height:1.65;max-width:380px}
-.mn-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:240px;color:var(--mn-muted);font-size:12px}
-.mn-spinner{width:22px;height:22px;border-radius:50%;border:2px solid color-mix(in srgb,var(--mn-accent) 22%,transparent);border-top-color:var(--mn-accent);animation:mn-spin .8s linear infinite}
+.mn-empty-mark{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:var(--mn-radius-md);background:var(--mn-fill);color:var(--mn-muted);margin-bottom:2px}
+.mn-empty b{font-size:14px;line-height:22px;color:var(--mn-text);font-weight:600}
+.mn-empty span{font-size:13px;line-height:20px;max-width:380px}
+.mn-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:240px;color:var(--mn-muted);font-size:13px;line-height:20px}
+.mn-spinner{width:20px;height:20px;border-radius:50%;border:2px solid color-mix(in srgb,var(--mn-accent) 22%,transparent);border-top-color:var(--mn-accent);animation:mn-spin .8s linear infinite}
 @keyframes mn-spin{to{transform:rotate(360deg)}}
-.mn-skel{height:44px;border-radius:10px;background:linear-gradient(100deg,var(--mn-surface) 20%,var(--mn-surface-2) 40%,var(--mn-surface) 60%);background-size:220% 100%;animation:mn-shimmer 1.4s linear infinite;margin-bottom:6px}
+.mn-skel{height:44px;border-radius:var(--mn-radius-md);background:linear-gradient(100deg,var(--mn-skel) 20%,var(--mn-hover) 40%,var(--mn-skel) 60%);background-size:220% 100%;animation:mn-shimmer 1.4s linear infinite;margin-bottom:6px}
 @keyframes mn-shimmer{to{background-position:-120% 0}}
 
-/* ---------- dialog ---------- */
-.mn-overlay{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.38);animation:mn-fade .16s ease-out}
-.mn-dialog{display:flex;flex-direction:column;width:min(560px,100%);max-height:min(86vh,780px);border-radius:18px;background:var(--mn-overlay);border:1px solid var(--mn-line);box-shadow:0 24px 60px rgba(0,0,0,.34);animation:mn-rise .18s ease-out;overflow:hidden}
-@keyframes mn-fade{from{opacity:0}to{opacity:1}}
-@keyframes mn-rise{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
-.mn-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 4px}
-.mn-dialog-head h2{margin:0 0 3px;font-size:17px;line-height:1.3;font-weight:650;letter-spacing:-.015em}
-.mn-dialog-sub{margin:0;font-size:11.5px;color:var(--mn-muted);line-height:1.5}
-.mn-dialog-body{flex:1 1 auto;min-height:0;overflow:auto;padding:6px 22px 10px;scrollbar-width:thin}
+/* ---------- modal（复制 DSH Dialog / ConfirmDialog 结构） ---------- */
+.mn-modal-root{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px}
+.mn-modal-mask{position:absolute;inset:0;background:var(--mn-mask);backdrop-filter:var(--mn-blur);animation:mn-mask-in var(--mn-dur) var(--mn-ease)}
+.mn-modal{position:relative;z-index:1;display:flex;flex-direction:column;width:min(380px,100%);max-height:calc(100dvh - 48px);overflow:hidden;border:0;border-radius:var(--mn-radius-panel);background:var(--mn-fill-2);box-shadow:var(--mn-elevation);animation:mn-modal-in var(--mn-dur) var(--mn-ease)}
+.mn-modal:focus{outline:none}
+.mn-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:22px 14px 12px 24px}
+.mn-modal-head h2{margin:0;font-size:16px;line-height:24px;font-weight:500;color:var(--mn-text)}
+.mn-modal-close{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:var(--mn-radius-sm);background:transparent;color:var(--mn-muted);cursor:pointer}
+.mn-modal-close:hover{background:var(--mn-hover);color:var(--mn-text)}
+.mn-modal-desc{margin:0;padding:0 24px 12px;font-size:14px;line-height:22px;color:var(--mn-muted)}
+.mn-modal-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 24px 4px;scrollbar-width:thin}
+.mn-modal-foot{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:20px 24px 24px}
+.mn-modal-foot .mn-modal-note{margin-right:auto;font-size:12px;line-height:18px;color:var(--mn-muted)}
+.mn-modal-actions{display:flex;align-items:center;gap:8px}
+.mn-modal-settings{width:min(560px,100%)}
+.mn-modal-body>.mn-group:first-child{padding-top:4px}
+.mn-confirm-warning{display:flex;align-items:flex-start;gap:10px;color:var(--mn-muted);font-size:14px;line-height:22px}
+.mn-confirm-warning p{margin:0}
+.mn-confirm-icon{flex:none;margin-top:2px;color:var(--mn-hot)}
+.mn-confirm-action{min-width:136px}
+@keyframes mn-mask-in{from{opacity:0}to{opacity:1}}
+@keyframes mn-modal-in{from{opacity:0;transform:translateY(4px) scale(.99)}to{opacity:1;transform:none}}
+
+/* ---------- tooltip（复制 DSH Tooltip bubble） ---------- */
+.mn-tt{position:fixed;z-index:1100;display:inline-flex;align-items:center;gap:8px;width:max-content;max-width:min(50vw,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:3px 7px;border-radius:var(--mn-radius-sm);background:var(--mn-tooltip-bg);color:var(--dsw-static-neutral-bluish-00,#fff);font-size:13px;line-height:20px;white-space:pre-line;overflow-wrap:break-word;pointer-events:none;box-shadow:var(--mn-shadow-1);animation:mn-tt-in .1s var(--mn-ease)}
+@keyframes mn-tt-in{from{opacity:0}to{opacity:1}}
+
+/* ---------- toast（复制 DSH Toast：顶部居中、停留 3s 后淡出） ---------- */
+.mn-toast{position:fixed;top:40px;left:50%;z-index:1100;pointer-events:none;display:flex;align-items:center;gap:10px;width:max-content;max-width:min(640px,calc(100vw - 48px));padding:12px 16px;border-radius:var(--mn-radius-lg);background:var(--mn-toast-bg);color:var(--mn-toast-label);font-size:14px;line-height:22px;box-shadow:var(--mn-shadow-3);transform:translate(-50%);animation:mn-toast-fade 1s var(--mn-ease) 3s forwards}
+.mn-toast-icon{display:inline-flex;align-items:center;flex:0 0 auto;color:var(--dsw-alias-state-success-primary,#22c55e)}
+.mn-toast-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes mn-toast-fade{0%,80%{opacity:1}100%{opacity:0}}
+
+/* ---------- settings ---------- */
 .mn-group{padding:16px 0 4px;border-top:1px solid var(--mn-line)}
 .mn-group:first-child{border-top:0;padding-top:10px}
 .mn-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-.mn-group-head h3{margin:0;font-size:12px;font-weight:650;letter-spacing:.03em;color:var(--mn-muted)}
+.mn-group-head h3{margin:0;font-size:12px;line-height:18px;font-weight:600;color:var(--mn-muted)}
 .mn-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .mn-field:last-child{margin-bottom:4px}
-.mn-label{font-size:11.5px;font-weight:600;color:var(--mn-muted)}
+.mn-label{font-size:12px;line-height:18px;font-weight:500;color:var(--mn-muted)}
 .mn-field-row{display:flex;align-items:center;gap:8px;min-width:0}
-.mn-input{height:34px;min-width:0;border:1px solid var(--mn-line);border-radius:9px;background:var(--mn-surface);color:var(--mn-text);font-family:inherit;font-size:12.5px;padding:0 11px;outline:none;transition:border-color .16s,box-shadow .16s}
-.mn-input:focus{border-color:color-mix(in srgb,var(--mn-accent) 60%,var(--mn-line));box-shadow:0 0 0 3px color-mix(in srgb,var(--mn-accent) 14%,transparent)}
+.mn-input{box-sizing:border-box;height:34px;min-width:0;border:.5px solid var(--dsw-alias-border-l4,rgba(0,0,0,.16));border-radius:var(--mn-radius-md);background:var(--mn-layer-3);color:var(--mn-text);font-family:inherit;font-size:13px;line-height:1.5;padding:0 12px;outline:none;transition:border-color var(--mn-dur) var(--mn-ease),box-shadow var(--mn-dur) var(--mn-ease)}
+.mn-input:focus{border-color:var(--mn-accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--mn-accent) 22%,transparent)}
 .mn-input[type="number"]{width:88px}
 .mn-field-row .mn-input{flex:1 1 auto}
-.mn-select{height:34px;border:1px solid var(--mn-line);border-radius:9px;background:var(--mn-surface);color:var(--mn-text);font-family:inherit;font-size:12.5px;padding:0 9px;outline:none;cursor:pointer;min-width:120px}
-.mn-select:focus{border-color:color-mix(in srgb,var(--mn-accent) 60%,var(--mn-line))}
-.mn-switch{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;cursor:pointer;color:var(--mn-text)}
+.mn-select{box-sizing:border-box;height:34px;border:.5px solid var(--dsw-alias-border-l4,rgba(0,0,0,.16));border-radius:var(--mn-radius-md);background:var(--mn-layer-3);color:var(--mn-text);font-family:inherit;font-size:13px;line-height:1.5;padding:0 8px 0 12px;outline:none;cursor:pointer;min-width:120px}
+.mn-select:focus{border-color:var(--mn-accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--mn-accent) 22%,transparent)}
+.mn-switch{display:inline-flex;align-items:center;gap:10px;font-size:14px;line-height:22px;cursor:pointer;color:var(--mn-text)}
 .mn-switch input{position:absolute;opacity:0;width:0;height:0}
-.mn-switch-track{position:relative;width:34px;height:19px;border-radius:999px;background:var(--mn-surface-2);border:1px solid var(--mn-line);transition:background .16s,border-color .16s;flex:0 0 auto}
-.mn-switch-track::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--mn-muted);transition:transform .16s ease-out,background .16s}
-.mn-switch input:checked+.mn-switch-track{background:color-mix(in srgb,var(--mn-accent) 20%,transparent);border-color:color-mix(in srgb,var(--mn-accent) 42%,var(--mn-line))}
-.mn-switch input:checked+.mn-switch-track::after{transform:translateX(15px);background:var(--mn-accent)}
-.mn-switch input:focus-visible+.mn-switch-track{outline:2px solid color-mix(in srgb,var(--mn-accent) 55%,transparent);outline-offset:2px}
-.mn-dialog-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px 18px;border-top:1px solid var(--mn-line)}
-.mn-dialog-foot .mn-foot-note{font-size:11.5px;color:var(--mn-muted)}
-.mn-dialog-foot .mn-foot-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.mn-switch-track{box-sizing:border-box;position:relative;flex:0 0 auto;width:36px;height:20px;padding:2px;border:0;border-radius:999px;background:var(--dsw-alias-border-l3,var(--mn-line-strong));transition:background var(--mn-dur) var(--mn-ease)}
+.mn-switch-track::after{content:'';display:block;width:16px;height:16px;border-radius:50%;background:var(--dsw-alias-switch-thumb,var(--mn-muted));transition:transform .12s ease}
+.mn-switch input:checked+.mn-switch-track{background:var(--mn-accent);border-color:var(--mn-accent)}
+.mn-switch input:checked+.mn-switch-track::after{transform:translate(16px)}
+.mn-switch input:focus-visible+.mn-switch-track{outline:2px solid color-mix(in srgb,var(--mn-accent) 45%,transparent);outline-offset:2px}
 
 /* ---------- models ---------- */
-.mn-chip-btn{cursor:pointer;font:inherit;text-align:left;transition:border-color .16s,color .16s}
-.mn-chip-btn:hover{border-color:var(--mn-line-strong);color:var(--mn-text)}
-.mn-link{border:0;background:none;padding:0;color:var(--mn-accent);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.mn-chip-btn{cursor:pointer;font:inherit;text-align:left;transition:background var(--mn-dur) var(--mn-ease),color var(--mn-dur) var(--mn-ease)}
+.mn-link{border:0;background:none;padding:0;color:var(--mn-accent);font:inherit;font-size:13px;line-height:20px;cursor:pointer;white-space:nowrap}
 .mn-link:hover{text-decoration:underline}
-.mn-model-warn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;border-radius:9px;background:color-mix(in srgb,var(--mn-warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--mn-warn) 30%,var(--mn-line));color:var(--mn-warn);font-size:11.5px}
-.mn-model{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--mn-line);background:var(--mn-surface)}
+.mn-model-warn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;border-radius:var(--mn-radius-sm);background:color-mix(in srgb,var(--mn-warn) 8%,transparent);color:var(--mn-warn);font-size:12px;line-height:18px}
+.mn-model{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:var(--mn-radius-md);border:.5px solid var(--dsw-alias-border-l3,var(--mn-line));background:var(--mn-layer-3)}
 .mn-model + .mn-model{margin-top:10px}
 .mn-model-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.mn-model-name{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mn-text);min-width:0;flex-wrap:wrap}
+.mn-model-name{display:flex;align-items:center;gap:8px;font-size:14px;line-height:22px;color:var(--mn-text);min-width:0;flex-wrap:wrap}
 .mn-model-name b{font-weight:600}
-.mn-tag{padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--mn-accent) 14%,transparent);color:var(--mn-accent);font-size:10.5px;font-weight:600}
-.mn-model-meta{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:11.5px;color:var(--mn-muted);flex-wrap:wrap}
-.mn-model-estimate{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--mn-muted)}
+.mn-tag{padding:1px 8px;border-radius:999px;background:var(--mn-module);color:var(--mn-muted);font-size:11px;line-height:17px;font-weight:500}
+.mn-model-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;line-height:18px;color:var(--mn-muted);flex-wrap:wrap}
+.mn-model-estimate{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;line-height:18px;color:var(--mn-muted)}
 .mn-model-progress{display:flex;flex-direction:column;gap:5px}
-.mn-progress{height:6px;border-radius:999px;background:var(--mn-surface-2);overflow:hidden}
-.mn-progress-fill{height:100%;border-radius:999px;background:var(--mn-accent);transition:width .3s ease-out}
+.mn-progress{height:4px;border-radius:999px;background:var(--mn-skel);overflow:hidden}
+.mn-progress-fill{height:100%;border-radius:999px;background:var(--mn-accent);transition:width .3s var(--mn-ease)}
 .mn-model-progress .mn-hint{margin:0}
-.mn-model-steps{font-size:11.5px;color:var(--mn-muted)}
+.mn-model-steps{font-size:12px;line-height:18px;color:var(--mn-muted)}
 .mn-model-steps summary{cursor:pointer;user-select:none;list-style:none}
 .mn-model-steps summary::-webkit-details-marker{display:none}
 .mn-model-step-now{color:var(--mn-text)}
 .mn-model-steps ol{list-style:none;margin:7px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
 .mn-step{display:flex;align-items:center;gap:7px}
 .mn-model-step-status{margin-left:auto}
-.mn-model-error{padding:9px 11px;border-radius:9px;background:color-mix(in srgb,var(--mn-hot) 10%,transparent);border:1px solid color-mix(in srgb,var(--mn-hot) 28%,var(--mn-line));word-break:break-word}
-.mn-model-error strong{display:block;font-size:11.5px;color:var(--mn-hot);font-weight:600}
+.mn-model-error{padding:9px 11px;border-radius:var(--mn-radius-sm);background:color-mix(in srgb,var(--mn-hot) 8%,transparent);word-break:break-word}
+.mn-model-error strong{display:block;font-size:12px;line-height:18px;color:var(--mn-hot);font-weight:600}
 .mn-model-error .mn-hint{color:var(--mn-muted);margin:4px 0 0}
 .mn-model-source{margin:0}
 .mn-model-source .mn-hint{margin:0}
 .mn-model-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.mn-model-actions-hint{font-size:11px;color:var(--mn-muted)}
+.mn-model-actions-hint{font-size:12px;line-height:18px;color:var(--mn-muted)}
 
 @media (prefers-reduced-motion:reduce){
   .mn-spinner,.mn-skel,.mn-dot[data-tone="busy"],.mn-dot[data-tone="active"]{animation:none!important}
-  .mn-overlay,.mn-dialog{animation:none}
+  .mn-modal-mask,.mn-modal,.mn-tt,.mn-toast{animation:none!important}
 }
 `;
 
@@ -823,8 +872,8 @@ window.__ModuleLoader__.load({
           cfgDirty: false,
           cfgSaving: false,
           prepareId: '',
-          confirmDelete: false,
-          confirmCancel: false,
+          confirm: '',
+          noticeSeq: 0,
         });
 
         const useStore = () => React.useSyncExternalStore(store.subscribe, store.get);
@@ -833,7 +882,6 @@ window.__ModuleLoader__.load({
         // Small UI helpers
         // -----------------------------------------------------------------
         let noticeTimer = 0;
-        let confirmTimer = 0;
 
         const showError = (error, fallback) => {
           const message =
@@ -845,32 +893,19 @@ window.__ModuleLoader__.load({
           store.set({ error: message });
         };
 
+        // 临时结果提示走 DSH Toast：出现即自动消失，不打断页面布局。
         const showNotice = (text) => {
           if (noticeTimer) window.clearTimeout(noticeTimer);
-          store.set({ notice: text });
+          store.set({ notice: String(text || ''), noticeSeq: store.get().noticeSeq + 1 });
           noticeTimer = window.setTimeout(() => {
             noticeTimer = 0;
             store.set({ notice: '' });
           }, 4000);
         };
 
-        const resetConfirmDelete = () => {
-          if (confirmTimer) {
-            window.clearTimeout(confirmTimer);
-            confirmTimer = 0;
-          }
-          if (store.get().confirmDelete || store.get().confirmCancel) {
-            store.set({ confirmDelete: false, confirmCancel: false });
-          }
-        };
-
-        const armConfirmDelete = () => {
-          store.set({ confirmDelete: true, confirmCancel: false });
-          if (confirmTimer) window.clearTimeout(confirmTimer);
-          confirmTimer = window.setTimeout(() => {
-            confirmTimer = 0;
-            store.set({ confirmDelete: false });
-          }, 5000);
+        // 不可撤销的操作统一走 DSH ConfirmDialog，不再用「再点一次」的按钮变形。
+        const closeConfirm = () => {
+          if (store.get().confirm) store.set({ confirm: '' });
         };
 
         const cfgFrom = (config) => ({
@@ -990,10 +1025,6 @@ window.__ModuleLoader__.load({
           if (noticeTimer) {
             window.clearTimeout(noticeTimer);
             noticeTimer = 0;
-          }
-          if (confirmTimer) {
-            window.clearTimeout(confirmTimer);
-            confirmTimer = 0;
           }
         };
 
@@ -1486,7 +1517,7 @@ window.__ModuleLoader__.load({
             showError(t('captureNone'));
             return;
           }
-          store.set({ busy: 'start', error: '', confirmDelete: false, confirmCancel: false });
+          store.set({ busy: 'start', error: '', confirm: '' });
           try {
             await apiPost('/recordings', { mode: draft.transcribeMode });
             store.set({ live: { partial: '', segments: [] } });
@@ -1515,12 +1546,13 @@ window.__ModuleLoader__.load({
           }
         };
 
+        const requestCancelRecording = () => {
+          if (!store.get().state?.recording?.active || store.get().busy) return;
+          store.set({ confirm: 'cancel' });
+        };
+
         const cancelRecording = async () => {
-          if (!store.get().confirmCancel) {
-            store.set({ confirmCancel: true, confirmDelete: false });
-            return;
-          }
-          store.set({ busy: 'cancel', confirmCancel: false, error: '' });
+          store.set({ confirm: '', busy: 'cancel', error: '' });
           try {
             await apiPost('/recordings/cancel', {});
             store.set({ live: { partial: '', segments: [] } });
@@ -1535,7 +1567,7 @@ window.__ModuleLoader__.load({
 
         const selectMeeting = (meetingId) => {
           if (store.get().selectedId === meetingId) return;
-          resetConfirmDelete();
+          closeConfirm();
           store.set({ selectedId: meetingId, detail: null, detailError: '' });
           void loadDetail(meetingId, false);
         };
@@ -1606,15 +1638,15 @@ window.__ModuleLoader__.load({
           else showError(t('copyFailed'));
         };
 
+        const requestDeleteMeeting = () => {
+          if (!store.get().selectedId || store.get().busy) return;
+          store.set({ confirm: 'delete' });
+        };
+
         const deleteMeeting = async () => {
           const meetingId = store.get().selectedId;
           if (!meetingId || store.get().busy) return;
-          if (!store.get().confirmDelete) {
-            armConfirmDelete();
-            return;
-          }
-          resetConfirmDelete();
-          store.set({ busy: 'delete', error: '' });
+          store.set({ confirm: '', busy: 'delete', error: '' });
           try {
             await apiDelete(`/meetings/${encodeURIComponent(meetingId)}`);
             store.set({ selectedId: '', detail: null, detailError: '' });
@@ -1717,6 +1749,21 @@ window.__ModuleLoader__.load({
                 h('path', { d: 'M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z' }),
                 h('path', { d: 'M18.4 16.6l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z' }),
               );
+            case 'warn':
+              return h(
+                'svg',
+                common,
+                h('path', { d: 'M12 4.2 21 20H3z' }),
+                h('path', { d: 'M12 10v4.6' }),
+                h('path', { d: 'M12 17.4v.2' }),
+              );
+            case 'check':
+              return h(
+                'svg',
+                common,
+                h('circle', { cx: 12, cy: 12, r: 8.6 }),
+                h('path', { d: 'M8.4 12.2l2.5 2.5 4.7-5' }),
+              );
             default:
               return null;
           }
@@ -1733,6 +1780,267 @@ window.__ModuleLoader__.load({
             { style: { display: 'inline-flex', alignItems: 'center', gap: '5px' } },
             h(StatusDot, { tone: info.tone }),
             h('span', null, info.label),
+          );
+        }
+
+        // ---- DSH 原语复刻：Tooltip / Modal / ConfirmDialog / Toast ----
+        // 规格取自 DSH 自身的 tooltip、dialog、confirm 与 toast 实现：行为一致、class 换成 mn- 前缀、
+        // 颜色只引用 --dsw-* 令牌（带 fallback），不向 document.body 挂 DOM。
+
+        const TOOLTIP_HOVER_DELAY = 500;
+        const TOOLTIP_FOCUS_DELAY = 0;
+
+        function Tooltip({ label, side = 'bottom', align = 'center', gap = 8, disabled = false, children }) {
+          const text = String(label == null ? '' : label).trim();
+          const active = !!text && !disabled;
+          const anchorRef = React.useRef(null);
+          const bubbleRef = React.useRef(null);
+          const timerRef = React.useRef(0);
+          const stateRef = React.useRef({ hover: false, focus: false });
+          const [open, setOpen] = React.useState(false);
+          const [pos, setPos] = React.useState(null);
+
+          const clearTimer = () => {
+            if (timerRef.current) {
+              window.clearTimeout(timerRef.current);
+              timerRef.current = 0;
+            }
+          };
+          const hide = () => {
+            clearTimer();
+            setOpen(false);
+            setPos(null);
+          };
+          const show = () => {
+            clearTimer();
+            setOpen(true);
+          };
+          const showLater = (delay) => {
+            clearTimer();
+            if (!active) return;
+            timerRef.current = window.setTimeout(() => {
+              timerRef.current = 0;
+              setOpen(true);
+            }, delay);
+          };
+
+          // 打开后按锚点位置摆放气泡，并夹在视口内。
+          React.useLayoutEffect(() => {
+            if (!open) return;
+            const anchor = anchorRef.current;
+            const bubble = bubbleRef.current;
+            if (!anchor || !bubble) return;
+            const rect = anchor.getBoundingClientRect();
+            const box = bubble.getBoundingClientRect();
+            const vw = window.innerWidth || 0;
+            const vh = window.innerHeight || 0;
+            let left;
+            let top;
+            if (side === 'bottom' || side === 'top') {
+              left = align === 'start' ? rect.left : align === 'end' ? rect.right - box.width : rect.left + rect.width / 2 - box.width / 2;
+              top = side === 'bottom' ? rect.bottom + gap : rect.top - gap - box.height;
+            } else {
+              top = align === 'start' ? rect.top : align === 'end' ? rect.bottom - box.height : rect.top + rect.height / 2 - box.height / 2;
+              left = side === 'right' ? rect.right + gap : rect.left - gap - box.width;
+            }
+            if (vw) left = Math.min(Math.max(8, left), Math.max(8, vw - box.width - 8));
+            if (vh) top = Math.min(Math.max(8, top), Math.max(8, vh - box.height - 8));
+            setPos({ left, top });
+          }, [open, text, side, align, gap]);
+
+          React.useEffect(() => clearTimer, []);
+          React.useEffect(() => {
+            if (!open) return undefined;
+            const onKeyDown = (event) => {
+              if (event.key === 'Escape') hide();
+            };
+            window.addEventListener('keydown', onKeyDown, true);
+            window.addEventListener('scroll', hide, true);
+            return () => {
+              window.removeEventListener('keydown', onKeyDown, true);
+              window.removeEventListener('scroll', hide, true);
+            };
+          }, [open]);
+
+          const trigger = React.isValidElement(children)
+            ? React.cloneElement(children, {
+                ref: anchorRef,
+                onPointerEnter: (event) => {
+                  if (children.props.onPointerEnter) children.props.onPointerEnter(event);
+                  if (event.pointerType === 'touch') return;
+                  stateRef.current.hover = true;
+                  showLater(TOOLTIP_HOVER_DELAY);
+                },
+                onPointerLeave: (event) => {
+                  if (children.props.onPointerLeave) children.props.onPointerLeave(event);
+                  stateRef.current.hover = false;
+                  if (!stateRef.current.focus) hide();
+                  else clearTimer();
+                },
+                onFocus: (event) => {
+                  if (children.props.onFocus) children.props.onFocus(event);
+                  stateRef.current.focus = true;
+                  showLater(TOOLTIP_FOCUS_DELAY);
+                },
+                onBlur: (event) => {
+                  if (children.props.onBlur) children.props.onBlur(event);
+                  stateRef.current.focus = false;
+                  if (!stateRef.current.hover) hide();
+                },
+              })
+            : children;
+
+          return h(
+            React.Fragment,
+            null,
+            trigger,
+            active && open
+              ? h(
+                  'span',
+                  {
+                    ref: bubbleRef,
+                    role: 'tooltip',
+                    className: 'mn-tt',
+                    'data-side': side,
+                    'data-align': align,
+                    style: pos ? { left: `${pos.left}px`, top: `${pos.top}px` } : { left: '0px', top: '0px', visibility: 'hidden' },
+                  },
+                  text,
+                )
+              : null,
+          );
+        }
+
+        const FOCUSABLE = 'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+        function Modal({ open, title, description, children, footer, onClose, closeLabel, width, className }) {
+          const boxRef = React.useRef(null);
+          const restoreRef = React.useRef(null);
+
+          React.useEffect(() => {
+            if (!open) return undefined;
+            const previous = document.activeElement;
+            restoreRef.current = previous && typeof previous.focus === 'function' ? previous : null;
+            const box = boxRef.current;
+            const target = box && (box.querySelector('[data-modal-autofocus]') || box.querySelector(FOCUSABLE) || box);
+            if (target && typeof target.focus === 'function') target.focus();
+            return () => {
+              const restore = restoreRef.current;
+              if (restore && restore.isConnected && typeof restore.focus === 'function') restore.focus();
+            };
+          }, [open]);
+
+          if (!open) return null;
+
+          const onKeyDownCapture = (event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              event.stopPropagation();
+              if (onClose) onClose();
+              return;
+            }
+            if (event.key !== 'Tab') return;
+            const box = boxRef.current;
+            if (!box) return;
+            const items = Array.prototype.filter.call(box.querySelectorAll(FOCUSABLE), (el) => el.offsetParent !== null || el === document.activeElement);
+            if (!items.length) {
+              event.preventDefault();
+              box.focus();
+              return;
+            }
+            const first = items[0];
+            const last = items[items.length - 1];
+            const current = document.activeElement;
+            if (event.shiftKey && (current === first || current === box)) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && (current === last || current === box)) {
+              event.preventDefault();
+              first.focus();
+            }
+          };
+
+          return h(
+            'div',
+            { className: 'mn-modal-root', role: 'presentation', onKeyDownCapture },
+            h('div', { className: 'mn-modal-mask', 'aria-hidden': 'true', onClick: onClose || undefined }),
+            h(
+              'div',
+              {
+                ref: boxRef,
+                className: 'mn-modal' + (className ? ` ${className}` : ''),
+                role: 'dialog',
+                'aria-modal': 'true',
+                'aria-label': typeof title === 'string' ? title : undefined,
+                tabIndex: -1,
+                style: width ? { width } : undefined,
+              },
+              h(
+                'div',
+                { className: 'mn-modal-head' },
+                h('h2', { className: 'mn-modal-title' }, title),
+                onClose
+                  ? h(
+                      'button',
+                      { type: 'button', className: 'mn-modal-close', 'aria-label': closeLabel || t('closeDialog'), onClick: onClose },
+                      h(Icon, { name: 'close', size: 14 }),
+                    )
+                  : null,
+              ),
+              description ? h('p', { className: 'mn-modal-desc' }, description) : null,
+              h('div', { className: 'mn-modal-body' }, children),
+              footer ? h('div', { className: 'mn-modal-foot' }, footer) : null,
+            ),
+          );
+        }
+
+        function ConfirmDialog({ open, title, body, confirmLabel, cancelLabel, busy, onCancel, onConfirm }) {
+          return h(
+            Modal,
+            {
+              open,
+              title,
+              className: 'mn-confirm',
+              width: 'min(440px, 100%)',
+              onClose: busy ? undefined : onCancel,
+              closeLabel: cancelLabel || t('dialogCancel'),
+              footer: h(
+                React.Fragment,
+                null,
+                h(
+                  'button',
+                  { type: 'button', className: 'mn-btn', 'data-variant': 'outline', onClick: onCancel, disabled: !!busy },
+                  cancelLabel || t('dialogCancel'),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'mn-btn mn-confirm-action',
+                    'data-variant': 'primary',
+                    onClick: onConfirm,
+                    disabled: !!busy,
+                  },
+                  busy ? t('deleting') : confirmLabel,
+                ),
+              ),
+            },
+            h(
+              'div',
+              { className: 'mn-confirm-warning' },
+              h('span', { className: 'mn-confirm-icon' }, h(Icon, { name: 'warn', size: 18 })),
+              h('p', null, body),
+            ),
+          );
+        }
+
+        function Toast({ text, seq }) {
+          if (!text) return null;
+          return h(
+            'div',
+            { key: seq, className: 'mn-toast', role: 'status', 'aria-live': 'polite' },
+            h('span', { className: 'mn-toast-icon', 'aria-hidden': 'true' }, h(Icon, { name: 'check', size: 14 })),
+            h('span', { className: 'mn-toast-text' }, text),
           );
         }
 
@@ -1915,40 +2223,40 @@ window.__ModuleLoader__.load({
               { className: 'mn-topbar-right' },
               // 模型状态只是入口：下载/切换都在设置页的模型列表里完成。
               h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'mn-chip mn-chip-btn',
-                  title: `${t('modelLabel')}：${current?.name || t('phaseUnprepared')}`,
-                  onClick: openSettings,
-                },
-                h(StatusDot, { tone: ready ? 'ok' : phaseTone(phase) }),
-                h('b', null, current?.name || t('modelLabel')),
-                h('span', { className: 'mn-sep' }, '·'),
-                h('span', null, phaseLabel(phase)),
+                Tooltip,
+                { label: t('modelHint'), side: 'bottom', align: 'end' },
+                h(
+                  'button',
+                  { type: 'button', className: 'mn-chip mn-chip-btn', onClick: openSettings },
+                  h(StatusDot, { tone: ready ? 'ok' : phaseTone(phase) }),
+                  h('b', null, current?.name || t('modelLabel')),
+                  h('span', { className: 'mn-sep' }, '·'),
+                  h('span', null, phaseLabel(phase)),
+                ),
               ),
               h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'mn-icon-btn',
-                  title: t('settings'),
-                  'aria-label': t('settings'),
-                  onClick: openSettings,
-                },
-                h(Icon, { name: 'gear', size: 17 }),
+                Tooltip,
+                { label: t('settings'), side: 'bottom', align: 'end' },
+                h(
+                  'button',
+                  { type: 'button', className: 'mn-icon-btn', 'aria-label': t('settings'), onClick: openSettings },
+                  h(Icon, { name: 'gear', size: 17 }),
+                ),
               ),
               h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'mn-icon-btn',
-                  title: t('refresh'),
-                  'aria-label': t('refresh'),
-                  disabled: s.refreshing,
-                  onClick: () => void refreshState(false),
-                },
-                h(Icon, { name: 'refresh', size: 17 }),
+                Tooltip,
+                { label: t('refresh'), side: 'bottom', align: 'end' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'mn-icon-btn',
+                    'aria-label': t('refresh'),
+                    disabled: s.refreshing,
+                    onClick: () => void refreshState(false),
+                  },
+                  h(Icon, { name: 'refresh', size: 17 }),
+                ),
               ),
             ),
           );
@@ -1984,19 +2292,23 @@ window.__ModuleLoader__.load({
               { className: 'mn-record-head' },
               h('h2', null, t('recordTitle')),
               h(
-                'div',
-                { className: 'mn-seg', role: 'group', 'aria-label': t('mode'), title: active ? t('modeLocked') : '' },
-                ['after', 'realtime'].map((value) =>
-                  h(
-                    'button',
-                    {
-                      key: value,
-                      type: 'button',
-                      'data-active': mode === value ? '1' : '0',
-                      disabled: active,
-                      onClick: () => changeMode(value),
-                    },
-                    value === 'realtime' ? t('modeRealtime') : t('modeAfter'),
+                Tooltip,
+                { label: t('modeLocked'), disabled: !active, side: 'bottom', align: 'end' },
+                h(
+                  'div',
+                  { className: 'mn-seg', role: 'group', 'aria-label': t('mode') },
+                  ['after', 'realtime'].map((value) =>
+                    h(
+                      'button',
+                      {
+                        key: value,
+                        type: 'button',
+                        'data-active': mode === value ? '1' : '0',
+                        disabled: active,
+                        onClick: () => changeMode(value),
+                      },
+                      value === 'realtime' ? t('modeRealtime') : t('modeAfter'),
+                    ),
                   ),
                 ),
               ),
@@ -2041,7 +2353,7 @@ window.__ModuleLoader__.load({
                     {
                       type: 'button',
                       className: 'mn-btn',
-                      'data-variant': 'stop',
+                      'data-variant': 'primary',
                       'data-size': 'block',
                       disabled: busy === 'stop',
                       onClick: () => void stopRecording(),
@@ -2068,12 +2380,13 @@ window.__ModuleLoader__.load({
                     {
                       type: 'button',
                       className: 'mn-btn',
-                      'data-variant': 'danger',
+                      'data-variant': 'ghost',
+                      'data-tone': 'danger',
                       'data-size': 'small',
                       disabled: busy === 'cancel',
-                      onClick: () => void cancelRecording(),
+                      onClick: requestCancelRecording,
                     },
-                    s.confirmCancel ? t('cancelConfirm') : t('cancel'),
+                    t('cancel'),
                   )
                 : null,
             ),
@@ -2193,7 +2506,11 @@ window.__ModuleLoader__.load({
                           ),
                         ),
                         meeting.hasMinutes
-                          ? h('span', { className: 'mn-item-flag', title: t('hasMinutes') }, h(Icon, { name: 'doc', size: 14 }))
+                          ? h(
+                              Tooltip,
+                              { label: t('hasMinutes'), side: 'right', align: 'center' },
+                              h('span', { className: 'mn-item-flag' }, h(Icon, { name: 'doc', size: 14 })),
+                            )
                           : null,
                       ),
                     ),
@@ -2295,7 +2612,7 @@ window.__ModuleLoader__.load({
                   {
                     type: 'button',
                     className: 'mn-btn',
-                    'data-variant': 'tonal',
+                    'data-variant': 'outline',
                     disabled: !!busy || !hasTranscript || transcoding,
                     onClick: () => void generateMinutes(),
                   },
@@ -2327,30 +2644,29 @@ window.__ModuleLoader__.load({
                   busy === 'copy' ? t('copied') : t('copyTranscript'),
                 ),
                 h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'mn-btn',
-                    'data-variant': 'danger',
-                    'data-size': 'small',
-                    disabled: !!busy,
-                    title: t('deleteHint'),
-                    'aria-label': t('deleteAction'),
-                    onClick: () => void deleteMeeting(),
-                  },
-                  h(Icon, { name: 'trash', size: 14 }),
-                  s.confirmDelete ? t('deleteConfirm') : null,
+                  Tooltip,
+                  { label: t('deleteAction'), side: 'bottom', align: 'end' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'mn-icon-btn mn-icon-btn-danger',
+                      'aria-label': t('deleteAction'),
+                      disabled: !!busy,
+                      onClick: requestDeleteMeeting,
+                    },
+                    h(Icon, { name: 'trash', size: 15 }),
+                  ),
                 ),
               ),
             ),
-            s.confirmDelete ? h('p', { className: 'mn-hint', style: { color: 'var(--mn-hot)', marginTop: '8px' } }, t('deleteHint')) : null,
             meeting?.status === 'failed' && meeting?.error ? h(Banner, { tone: 'error' }, String(meeting.error)) : null,
             transcoding ? h(Banner, { tone: 'info' }, t('transcribingHint')) : null,
             h(
               'div',
               { className: 'mn-audio' },
               h('span', { className: 'mn-audio-label' }, t('audioTitle')),
-              h('audio', { key: meetingId, className: 'mn-audio', controls: true, preload: 'metadata', src: audioSrc }),
+              h('audio', { key: meetingId, className: 'mn-audio-el', controls: true, preload: 'metadata', src: audioSrc }),
             ),
             folderPath ? h('span', { className: 'mn-path' }, `${t('meetingPath')}：${folderPath}`) : null,
             h(
@@ -2613,7 +2929,7 @@ window.__ModuleLoader__.load({
                       {
                         type: 'button',
                         className: 'mn-btn',
-                        'data-variant': 'primary',
+                        'data-variant': 'outline',
                         'data-size': 'small',
                         onClick: () => void prepareModel(model.id, source === 'auto' ? '' : source),
                       },
@@ -2627,171 +2943,28 @@ window.__ModuleLoader__.load({
 
         function SettingsDialog() {
           const s = useStore();
-          const boxRef = React.useRef(null);
           const draft = s.cfgDraft || cfgFrom(s.state?.config);
           const languages = s.state?.provider?.languages || ['auto', 'zh', 'en', 'yue', 'ja', 'ko'];
           const models = modelList(s.state);
           const recording = !!s.state?.recording?.active;
-          React.useEffect(() => {
-            const onKey = (event) => {
-              if (event.key === 'Escape') {
-                event.stopPropagation();
-                closeSettings();
-              }
-            };
-            window.addEventListener('keydown', onKey);
-            const node = boxRef.current;
-            const focusable = node ? node.querySelector('input, select, button') : null;
-            if (focusable && typeof focusable.focus === 'function') focusable.focus();
-            return () => window.removeEventListener('keydown', onKey);
-          }, []);
           return h(
-            'div',
+            Modal,
             {
-              className: 'mn-overlay',
-              onMouseDown: (event) => {
-                if (event.target === event.currentTarget) closeSettings();
-              },
-            },
-            h(
-              'div',
-              { className: 'mn-dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'mn-settings-title', ref: boxRef },
-              h(
-                'div',
-                { className: 'mn-dialog-head' },
+              open: !!s.settingsOpen,
+              title: t('settings'),
+              description: t('settingsSubtitle'),
+              className: 'mn-modal-settings',
+              width: 'min(560px, 100%)',
+              onClose: closeSettings,
+              closeLabel: t('closeDialog'),
+              footer: h(
+                React.Fragment,
+                null,
+                h('span', { className: 'mn-modal-note' }, s.cfgDirty ? t('unsavedHint') : ''),
                 h(
                   'div',
-                  null,
-                  h('h2', { id: 'mn-settings-title' }, t('settings')),
-                  h('p', { className: 'mn-dialog-sub' }, t('settingsSubtitle')),
-                ),
-                h(
-                  'button',
-                  { type: 'button', className: 'mn-icon-btn', title: t('closeDialog'), 'aria-label': t('closeDialog'), onClick: closeSettings },
-                  h(Icon, { name: 'close', size: 16 }),
-                ),
-              ),
-              h(
-                'div',
-                { className: 'mn-dialog-body' },
-                h(
-                  'div',
-                  { className: 'mn-group' },
-                  h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionModels'))),
-                  h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('modelSectionNote')),
-                  models.length
-                    ? h(
-                        'div',
-                        { className: 'mn-model-list' },
-                        models.map((model) => h(ModelRow, { key: model.id, model })),
-                      )
-                    : h('p', { className: 'mn-hint' }, t('modelEmpty')),
-                  h('p', { className: 'mn-hint' }, t('modelsHint')),
-                ),
-                h(
-                  'div',
-                  { className: 'mn-group' },
-                  h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionStorage'))),
-                  h(
-                    'div',
-                    { className: 'mn-field' },
-                    h('label', { className: 'mn-label', htmlFor: 'mn-cfg-dir' }, t('storageDir')),
-                    h(
-                      'div',
-                      { className: 'mn-field-row' },
-                      h('input', {
-                        id: 'mn-cfg-dir',
-                        className: 'mn-input',
-                        type: 'text',
-                        value: draft.storageDir,
-                        spellCheck: false,
-                        placeholder: '~/dsh-meetings',
-                        onChange: (event) => editDraft({ storageDir: event.target.value }),
-                      }),
-                      h('button', { type: 'button', className: 'mn-btn', 'data-size': 'small', onClick: chooseStorageDir }, t('pickDirectory')),
-                    ),
-                    h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('storageHint')),
-                  ),
-                ),
-                h(
-                  'div',
-                  { className: 'mn-group' },
-                  h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionRecognition'))),
-                  h(
-                    'div',
-                    { className: 'mn-field' },
-                    h('label', { className: 'mn-label', htmlFor: 'mn-cfg-lang' }, t('language')),
-                    h(
-                      'select',
-                      {
-                        id: 'mn-cfg-lang',
-                        className: 'mn-select',
-                        value: draft.language,
-                        disabled: recording,
-                        onChange: (event) => editDraft({ language: event.target.value }),
-                      },
-                      languages.map((code) => h('option', { key: code, value: code }, langLabel(code))),
-                    ),
-                  ),
-                  h(
-                    'div',
-                    { className: 'mn-field' },
-                    h('label', { className: 'mn-label', htmlFor: 'mn-cfg-chunk' }, t('chunkSeconds')),
-                    h('input', {
-                      id: 'mn-cfg-chunk',
-                      className: 'mn-input',
-                      type: 'number',
-                      min: 8,
-                      max: 60,
-                      step: 5,
-                      value: String(draft.chunkSeconds),
-                      disabled: recording,
-                      onChange: (event) => editDraft({ chunkSeconds: Number(event.target.value) || 0 }),
-                    }),
-                    h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('chunkHint')),
-                  ),
-                ),
-                h(
-                  'div',
-                  { className: 'mn-group' },
-                  h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionCapture'))),
-                  h(
-                    'div',
-                    { className: 'mn-field' },
-                    h(
-                      'label',
-                      { className: 'mn-switch' },
-                      h('input', {
-                        type: 'checkbox',
-                        checked: !!draft.captureMicrophone,
-                        onChange: (event) => editDraft({ captureMicrophone: event.target.checked }),
-                      }),
-                      h('span', { className: 'mn-switch-track' }),
-                      h('span', null, t('captureMic')),
-                    ),
-                    h(
-                      'label',
-                      { className: 'mn-switch', style: { marginTop: '10px' } },
-                      h('input', {
-                        type: 'checkbox',
-                        checked: !!draft.captureSystemAudio,
-                        onChange: (event) => editDraft({ captureSystemAudio: event.target.checked }),
-                      }),
-                      h('span', { className: 'mn-switch-track' }),
-                      h('span', null, t('captureSystem')),
-                    ),
-                    h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('captureHint')),
-                  ),
-                ),
-              ),
-              h(
-                'div',
-                { className: 'mn-dialog-foot' },
-                h('span', { className: 'mn-foot-note' }, s.cfgDirty ? t('unsavedHint') : ''),
-                h(
-                  'div',
-                  { className: 'mn-foot-actions' },
-                  h('button', { type: 'button', className: 'mn-btn', 'data-variant': 'ghost', onClick: closeSettings }, t('dialogCancel')),
+                  { className: 'mn-modal-actions' },
+                  h('button', { type: 'button', className: 'mn-btn', 'data-variant': 'outline', onClick: closeSettings }, t('dialogCancel')),
                   h(
                     'button',
                     {
@@ -2804,6 +2977,116 @@ window.__ModuleLoader__.load({
                     s.cfgSaving ? t('savingConfig') : t('saveConfig'),
                   ),
                 ),
+              ),
+            },
+            h(
+              'div',
+              { className: 'mn-group' },
+              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionModels'))),
+              h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('modelSectionNote')),
+              models.length
+                ? h('div', { className: 'mn-model-list' }, models.map((model) => h(ModelRow, { key: model.id, model })))
+                : h('p', { className: 'mn-hint' }, t('modelEmpty')),
+              h('p', { className: 'mn-hint' }, t('modelsHint')),
+            ),
+            h(
+              'div',
+              { className: 'mn-group' },
+              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionStorage'))),
+              h(
+                'div',
+                { className: 'mn-field' },
+                h('label', { className: 'mn-label', htmlFor: 'mn-cfg-dir' }, t('storageDir')),
+                h(
+                  'div',
+                  { className: 'mn-field-row' },
+                  h('input', {
+                    id: 'mn-cfg-dir',
+                    className: 'mn-input',
+                    type: 'text',
+                    value: draft.storageDir,
+                    spellCheck: false,
+                    placeholder: '~/dsh-meetings',
+                    'data-modal-autofocus': 'true',
+                    onChange: (event) => editDraft({ storageDir: event.target.value }),
+                  }),
+                  h('button', { type: 'button', className: 'mn-btn', 'data-variant': 'outline', 'data-size': 'small', onClick: chooseStorageDir }, t('pickDirectory')),
+                ),
+                h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('storageHint')),
+              ),
+            ),
+            h(
+              'div',
+              { className: 'mn-group' },
+              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionRecognition'))),
+              h(
+                'div',
+                { className: 'mn-field' },
+                h('label', { className: 'mn-label', htmlFor: 'mn-cfg-lang' }, t('language')),
+                h(
+                  'select',
+                  {
+                    id: 'mn-cfg-lang',
+                    className: 'mn-select',
+                    value: draft.language,
+                    disabled: recording,
+                    onChange: (event) => editDraft({ language: event.target.value }),
+                  },
+                  languages.map((code) => h('option', { key: code, value: code }, langLabel(code))),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'mn-field' },
+                h('label', { className: 'mn-label', htmlFor: 'mn-cfg-chunk' }, t('chunkSeconds')),
+                h('input', {
+                  id: 'mn-cfg-chunk',
+                  className: 'mn-input',
+                  type: 'number',
+                  min: 8,
+                  max: 60,
+                  step: 5,
+                  value: String(draft.chunkSeconds),
+                  disabled: recording,
+                  onChange: (event) => editDraft({ chunkSeconds: Number(event.target.value) || 0 }),
+                }),
+                h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('chunkHint')),
+              ),
+            ),
+            h(
+              'div',
+              { className: 'mn-group' },
+              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionCapture'))),
+              h(
+                'div',
+                { className: 'mn-field' },
+                h(
+                  'label',
+                  { className: 'mn-switch' },
+                  h('input', {
+                    type: 'checkbox',
+                    role: 'switch',
+                    'aria-checked': draft.captureMicrophone ? 'true' : 'false',
+                    checked: !!draft.captureMicrophone,
+                    onChange: (event) => editDraft({ captureMicrophone: event.target.checked }),
+                  }),
+                  h('span', { className: 'mn-switch-track' }),
+                  h('span', null, t('captureMic')),
+                ),
+                h(
+                  'label',
+                  { className: 'mn-switch', style: { marginTop: '10px' } },
+                  h('input', {
+                    type: 'checkbox',
+                    role: 'switch',
+                    'aria-checked': draft.captureSystemAudio ? 'true' : 'false',
+                    checked: !!draft.captureSystemAudio,
+                    onChange: (event) => editDraft({ captureSystemAudio: event.target.checked }),
+                  }),
+                  h('span', { className: 'mn-switch-track' }),
+                  h('span', null, t('captureSystem')),
+                ),
+                h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('captureHint')),
               ),
             ),
           );
@@ -2853,10 +3136,28 @@ window.__ModuleLoader__.load({
               s.error ? h(Banner, { tone: 'error', onClose: () => store.set({ error: '' }) }, s.error) : null,
               s.warning ? h(Banner, { tone: 'warn', onClose: () => store.set({ warning: '' }) }, s.warning) : null,
               s.sseDown ? h(Banner, { tone: 'warn', onClose: () => store.set({ sseDown: false }) }, t('sseGaveUp')) : null,
-              s.notice ? h(Banner, { tone: 'info' }, s.notice) : null,
               h('div', { className: 'mn-layout' }, h('aside', { className: 'mn-rail' }, h(RecordPanel), h(MeetingList)), h(DetailPane)),
             ),
             s.settingsOpen ? h(SettingsDialog) : null,
+            h(ConfirmDialog, {
+              open: s.confirm === 'delete' || s.confirm === 'cancel',
+              title: s.confirm === 'delete' ? t('confirmDeleteTitle') : t('confirmCancelTitle'),
+              body:
+                s.confirm === 'delete'
+                  ? t('confirmDeleteBody').replace(
+                      '{title}',
+                      s.detail?.meeting?.title ||
+                        (s.state?.meetings || []).find((item) => item.id === s.selectedId)?.title ||
+                        t('meetingFallbackTitle'),
+                    )
+                  : t('confirmCancelBody'),
+              confirmLabel: s.confirm === 'delete' ? t('confirmDeleteGo') : t('confirmCancelGo'),
+              cancelLabel: t('dialogCancel'),
+              busy: s.confirm === 'delete' ? s.busy === 'delete' : s.busy === 'cancel',
+              onCancel: closeConfirm,
+              onConfirm: s.confirm === 'delete' ? () => void deleteMeeting() : () => void cancelRecording(),
+            }),
+            h(Toast, { text: s.notice, seq: s.noticeSeq }),
           );
         }
         ctx.slots.inject('sidebar.panellist', () =>

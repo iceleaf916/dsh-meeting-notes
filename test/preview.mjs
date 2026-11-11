@@ -283,41 +283,98 @@ const fakeCtx = {
 };
 mod.apply(fakeCtx);
 
+Object.defineProperty(dom.window.navigator, 'clipboard', {
+  configurable: true,
+  value: { writeText: async () => {} },
+});
 const root = createRoot(window.document.getElementById('root'));
 const MainPage = registered['main#dsh-meeting-notes'];
 
 const THEMES = {
   light: {
     '--dsw-alias-bg-base': '#ffffff',
-    '--dsw-alias-bg-layer-1': '#f7f8fa',
-    '--dsw-alias-bg-layer-2': '#eef0f4',
-    '--dsw-alias-bg-overlay': '#ffffff',
-    '--dsw-alias-border-l1': '#e6e9ef',
-    '--dsw-alias-border-l2': '#d2d8e2',
-    '--dsw-alias-brand-primary': '#4d6bfe',
-    '--dsw-alias-label-primary': '#1c2027',
-    '--dsw-alias-label-secondary': '#6c7480',
-    '--dsw-alias-state-success-primary': '#2f9e6b',
-    '--dsw-alias-state-warn-primary': '#d97706',
-    '--dsw-alias-state-error-primary': '#e5484d',
-    '--dsw-alias-state-idle-primary': '#9aa3b0',
+    '--dsw-alias-bg-layer-1': '#ffffff',
+    '--dsw-alias-bg-layer-2': '#ffffff',
+    '--dsw-alias-bg-layer-3': '#ffffff',
+    '--dsw-alias-bg-overlay': '#e9ecf2',
+    '--dsw-alias-bg-module-platform': '#f5f6f7',
+    '--dsw-alias-bg-skeleton': '#0000000a',
+    '--dsw-alias-bg-mask-1': '#0000003d',
+    '--dsw-alias-border-l1': '#0000000a',
+    '--dsw-alias-border-l2': '#0000001a',
+    '--dsw-alias-border-l3': '#0000001f',
+    '--dsw-alias-border-l4': '#00000029',
+    '--dsw-alias-brand-primary': '#0f1115',
+    '--dsw-alias-label-primary': '#0f1115',
+    '--dsw-alias-label-secondary': '#61666b',
+    '--dsw-alias-label-tertiary': '#81858c',
+    '--dsw-alias-label-caption': '#adb2b8',
+    '--dsw-alias-state-success-primary': '#22c55e',
+    '--dsw-alias-state-warn-primary': '#f59e0b',
+    '--dsw-alias-state-error-primary': '#dc2626',
+    '--dsw-alias-state-idle-primary': '#cfd3d6',
+    '--dsw-alias-interactive-bg-hover': '#2631480f',
+    '--dsw-alias-interactive-bg-active': '#2631481a',
+    '--dsw-alias-button-primary-fill': '#0f1115',
+    '--dsw-alias-button-primary-hover': '#43454a',
+    '--dsw-alias-label-primary-foreground': '#ffffff',
+    '--dsw-alias-tooltip-bg': '#2c2c2e',
+    '--dsw-alias-toast-bg': '#353638',
+    '--dsw-alias-toast-label': '#ffffff',
+    '--dsw-alias-switch-thumb': '#ffffff',
+    '--dsw-mask-blur': 'none',
   },
   dark: {
-    '--dsw-alias-bg-base': '#14161a',
-    '--dsw-alias-bg-layer-1': '#1b1e24',
-    '--dsw-alias-bg-layer-2': '#242a33',
-    '--dsw-alias-bg-overlay': '#1f242c',
-    '--dsw-alias-border-l1': '#2b313a',
-    '--dsw-alias-border-l2': '#3b424e',
-    '--dsw-alias-brand-primary': '#7d95ff',
-    '--dsw-alias-label-primary': '#e8eaee',
-    '--dsw-alias-label-secondary': '#99a2af',
-    '--dsw-alias-state-success-primary': '#4cc38a',
-    '--dsw-alias-state-warn-primary': '#e0a03a',
-    '--dsw-alias-state-error-primary': '#f26d6d',
-    '--dsw-alias-state-idle-primary': '#7c8592',
+    '--dsw-alias-bg-base': '#151517',
+    '--dsw-alias-bg-layer-1': '#232324',
+    '--dsw-alias-bg-layer-2': '#2c2c2e',
+    '--dsw-alias-bg-layer-3': '#353638',
+    '--dsw-alias-bg-overlay': '#61666b',
+    '--dsw-alias-bg-module-platform': '#353638',
+    '--dsw-alias-bg-skeleton': '#ffffff14',
+    '--dsw-alias-bg-mask-1': '#00000080',
+    '--dsw-alias-border-l1': '#ffffff0f',
+    '--dsw-alias-border-l2': '#ffffff1f',
+    '--dsw-alias-border-l3': '#ffffff29',
+    '--dsw-alias-border-l4': '#ffffff33',
+    '--dsw-alias-brand-primary': '#f9fafb',
+    '--dsw-alias-label-primary': '#f9fafb',
+    '--dsw-alias-label-secondary': '#cfd3d6',
+    '--dsw-alias-label-tertiary': '#adb2b8',
+    '--dsw-alias-label-caption': '#81858c',
+    '--dsw-alias-state-success-primary': '#22c55e',
+    '--dsw-alias-state-warn-primary': '#f59e0b',
+    '--dsw-alias-state-error-primary': '#f87171',
+    '--dsw-alias-state-idle-primary': '#61666b',
+    '--dsw-alias-interactive-bg-hover': '#ffffff14',
+    '--dsw-alias-interactive-bg-active': '#ffffff24',
+    '--dsw-alias-button-primary-fill': '#f9fafb',
+    '--dsw-alias-button-primary-hover': '#ebeef2',
+    '--dsw-alias-label-primary-foreground': '#0f1115',
+    '--dsw-alias-tooltip-bg': '#43454a',
+    '--dsw-alias-toast-bg': '#43454a',
+    '--dsw-alias-toast-label': '#ffffff',
+    '--dsw-alias-switch-thumb': '#adb2b8',
+    '--dsw-mask-blur': 'none',
   },
 };
+
+const EXTRA_TOKENS = (dark) => ({
+  '--dsw-radius-xs': '4px',
+  '--dsw-radius-sm': '8px',
+  '--dsw-radius-md': '12px',
+  '--dsw-radius-lg': '16px',
+  '--dsw-radius-xl': '20px',
+  '--dsw-radius-panel': '28px',
+  '--dsw-shadow-lv1': '0 2px 4px 0 #0000000d',
+  '--dsw-shadow-lv3': '0 0 1px 0 #0003, 0 0 4px 0 #00000005, 0 12px 32px 0 #00000014',
+  '--dsw-elevation-prominent': dark
+    ? '0 0 1px 0 #ffffff1f, 0 3px 8px 0 #00000033, 0 0 20px 0 #00000040'
+    : '0 0 1px 0 #0000001f, 0 3px 8px 0 #0000000a, 0 0 20px 0 #0000000d',
+  '--ds-ease-in-out': 'cubic-bezier(.4,0,.2,1)',
+  '--ds-transition-duration': '.2s',
+  '--ds-transition-duration-fast': '.1s',
+});
 
 const tokens = (theme) =>
   Object.entries(theme)
@@ -329,8 +386,10 @@ const page = (body, theme, title) => `<!doctype html>
 <style>
   html, body { margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif; }
-  body { ${tokens(theme)} background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); }
+  body { color-scheme: ${theme === THEMES.dark ? 'dark' : 'light'}; ${tokens({ ...theme, ...EXTRA_TOKENS(theme === THEMES.dark) })} background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); }
   #stage { width: 1280px; min-height: 900px; }
+  /* 截图走查不需要动画，避免抓在过渡中间帧。 */
+  #stage * { animation: none !important; transition: none !important; }
 </style></head>
 <body><div id="stage">${body}</div></body></html>`;
 
@@ -386,6 +445,37 @@ for (const theme of ['light', 'dark']) {
         await new Promise((r) => setTimeout(r, 60));
       });
     }
+  }
+}
+
+// 删除确认（ConfirmDialog）与复制成功（Toast）
+for (const theme of ['light', 'dark']) {
+  const del = [...container.querySelectorAll('button')].find((el) => (el.getAttribute('aria-label') || '') === '删除');
+  if (del) {
+    await act(async () => {
+      del.click();
+      await new Promise((r) => setTimeout(r, 80));
+    });
+    snapshot(theme, `main-confirm-${theme}`);
+    const cancel = [...container.querySelectorAll('button')].find((el) => (el.textContent || '').trim() === '取消');
+    if (cancel) {
+      await act(async () => {
+        cancel.click();
+        await new Promise((r) => setTimeout(r, 60));
+      });
+    }
+  }
+  const copy = [...container.querySelectorAll('button')].find((el) => (el.textContent || '').includes('复制文稿'));
+  if (copy) {
+    await act(async () => {
+      copy.click();
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    snapshot(theme, `main-toast-${theme}`);
+    // 等 notice 4s 自动清空，避免串进下一轮的截图里
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 4300));
+    });
   }
 }
 
