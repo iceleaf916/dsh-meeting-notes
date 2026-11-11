@@ -17,9 +17,46 @@ import { randomBytes } from 'node:crypto';
 
 import { defaultTitle } from './storage.js';
 
-/** 腾讯会议国内版 / 国际版的 bundle 前缀。 */
-export const DETECT_TARGETS = ['com.tencent.meeting', 'com.tencent.wemeet'];
-export const DETECT_APP_NAME = '腾讯会议';
+/**
+ * 支持的会议客户端。检测进程按 bundle 前缀 / 可执行路径匹配，
+ * 匹配到之后用这里的 id / name 告诉界面「是哪个客户端在开会」。
+ *
+ * - 腾讯会议：国内版 com.tencent.meeting*，国际版 com.tencent.wemeet*；
+ * - 企业微信内置会议：企业微信把会议放在独立子进程 wwmapp
+ *   （bundle `com.tencent.wwmapp`，进程显示名「企业微信·会议」）里跑，
+ *   所以只匹配企业微信主进程 com.tencent.WeWorkMac 是抓不到的，而且主进程
+ *   还会因为语音消息/语音通话占用音频，容易误判。
+ */
+export const DETECT_APPS = [
+  {
+    id: 'tencent-meeting',
+    name: '腾讯会议',
+    bundlePrefixes: ['com.tencent.meeting', 'com.tencent.wemeet'],
+    pathHints: ['/TencentMeeting.app/', '/WeMeeting.app/'],
+  },
+  {
+    id: 'wecom-meeting',
+    name: '企业微信会议',
+    bundlePrefixes: ['com.tencent.wwmapp'],
+    pathHints: ['/企业微信.app/Contents/Frameworks/wwmapp.app/', '/WeCom.app/Contents/Frameworks/wwmapp.app/'],
+  },
+];
+
+/** 传给 Swift detector 的 bundle 前缀。 */
+export const DETECT_TARGETS = [...new Set(DETECT_APPS.flatMap((app) => app.bundlePrefixes))];
+/** 未识别到具体客户端时的兜底展示名（兼容旧调用方）。 */
+export const DETECT_APP_NAME = DETECT_APPS[0].name;
+
+function appIdentity(sampleApp) {
+  const bundle = String((sampleApp && sampleApp.bundle) || '');
+  const executable = String((sampleApp && sampleApp.executable) || '');
+  const match = DETECT_APPS.find(
+    (app) =>
+      app.bundlePrefixes.some((prefix) => bundle === prefix || bundle.startsWith(prefix + '.')) ||
+      app.pathHints.some((hint) => executable.includes(hint)),
+  );
+  return match || DETECT_APPS[0];
+}
 /** 采样间隔：越小越灵敏，但 Swift 侧每轮要枚举 CoreAudio 进程对象。 */
 const SAMPLE_INTERVAL_MS = 500;
 /** 开始建议 10 分钟后自动失效；结束建议 5 分钟。 */
@@ -222,8 +259,8 @@ export function createMeetingDetector({
     const next = {
       id: randomBytes(4).toString('hex'),
       kind,
-      app: 'tencent-meeting',
-      appName: DETECT_APP_NAME,
+      app: app || DETECT_APPS[0].id,
+      appName: appName || DETECT_APPS[0].name,
       title,
       createdAt: new Date(at).toISOString(),
       expiresAt: new Date(at + expiresIn).toISOString(),
@@ -245,9 +282,10 @@ export function createMeetingDetector({
     );
 
     if (transition === 'started') {
+      const identity = appIdentity(active);
       inMeeting = true;
-      app = 'tencent-meeting';
-      appName = DETECT_APP_NAME;
+      app = identity.id;
+      appName = identity.name;
       since = new Date(machine.startedAt || at).toISOString();
       createSuggestion('start', at);
       emit();
@@ -256,9 +294,8 @@ export function createMeetingDetector({
 
     if (transition === 'ended') {
       inMeeting = false;
-      app = '';
-      appName = '';
       since = null;
+      // 保留 app / appName：结束建议里仍要写清是哪个客户端。
       // 会议已经结束，还挂着的「开始记录」建议就过期了。
       if (suggestion && suggestion.kind === 'start') clearSuggestion();
       createSuggestion('end', at);

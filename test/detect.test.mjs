@@ -64,13 +64,20 @@ function makeRuntime({ config = baseConfig(), api = fakeDetectorApi(), recording
     detectorApi: api,
     now: () => clock.now,
   });
-  const sample = (active, advance = 0) => {
+  const sample = (active, advance = 0, bundle = 'com.tencent.meeting') => {
     clock.now += advance;
     detector.handleSample({
       at: clock.now,
-      apps: active
-        ? [{ pid: 42, bundle: 'com.tencent.meeting', input: true, output: true, window: true }]
-        : [{ pid: 42, bundle: 'com.tencent.meeting', input: false, output: false, window: true }],
+      apps: [
+        {
+          pid: 42,
+          bundle,
+          executable: '',
+          input: Boolean(active),
+          output: Boolean(active),
+          window: true,
+        },
+      ],
     });
   };
   return { detector, clock, state, api, sample };
@@ -122,6 +129,25 @@ test('控制器：检测到开始后给出「开始记录」建议，接受即�
   assert.equal(state.started.length, 1);
   assert.equal(state.started[0].mode, 'after');
   assert.equal(detector.snapshot().suggestion, null);
+  detector.dispose();
+});
+
+test('控制器：企业微信内置会议（wwmapp 子进程）也能识别，建议文案区分客户端', async () => {
+  const { detector, state, sample } = makeRuntime();
+  await detector.start();
+  await flush();
+
+  sample(true, 1000, 'com.tencent.wwmapp');
+  sample(true, 1000, 'com.tencent.wwmapp');
+  const suggestion = detector.snapshot().suggestion;
+  assert.equal(suggestion.kind, 'start');
+  assert.equal(suggestion.app, 'wecom-meeting');
+  assert.equal(suggestion.appName, '企业微信会议');
+  assert.equal(detector.snapshot().app, 'wecom-meeting');
+
+  const result = await detector.ack(suggestion.id, false);
+  assert.deepEqual(result, { action: 'ignored' });
+  assert.equal(state.started.length, 0);
   detector.dispose();
 });
 

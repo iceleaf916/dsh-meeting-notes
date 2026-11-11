@@ -2,7 +2,7 @@
 
 一个 DSH Web 插件：左侧栏「会议记录」入口，把「系统声音 + 麦克风」混音录下来，用本地语音识别模型（默认 SenseVoiceSmall，也可切换本插件自带的 Qwen3-ASR）转成中文文稿（可夹少量英文），需要时一键把转写交给 DSH 大模型整理成会议纪要，并在左侧工作区生成一条可继续聊天的会话记录。
 
-当前版本：**v0.3.0**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
+当前版本：**v0.4.0**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
 
 ## 功能
 
@@ -17,7 +17,7 @@
   - **Qwen3-ASR-0.6B (INT8)**：本插件自带 provider（`qwen3.js` + `qwen3-worker.js`，依赖 `sherpa-onnx-node`），约 1.15 GB，中文/方言/中英混说更稳，但非流式、单次窗口约 30 秒，更适合「结束后转写」。
 - 模型列表按 provider 动态生成：后续再接入其他 ASR 模型会自动出现在列表里，可分别下载、切换与查看准备进度。
 - 语言默认 `zh`，中文为主；SenseVoice 自带中英混说能力，英文术语、产品名会原样保留。
-- **会议提醒**（macOS 14.2+，默认开启）：后台检测腾讯会议是否真的开始/结束（只看它对麦克风、扬声器的占用状态，不读音频内容、不自动录音）；开始时页面内弹出「要开始记录吗」建议，结束时弹出「要结束记录吗」建议，同时以 **DeepSeek Harness** 身份发一条系统通知。同意即执行，忽略或超时后 30 分钟内不再打扰。检测订阅常驻在插件启动作用域，只要 DSH 在运行（页面可最小化、可在其他对话）就会提醒。
+- **会议提醒**（macOS 14.2+，默认开启）：后台检测腾讯会议、企业微信内置会议是否真的开始/结束（只看它们对麦克风、扬声器的占用状态，不读音频内容、不自动录音）；开始时页面内弹出「要开始记录吗」建议，结束时弹出「要结束记录吗」建议，同时以 **DeepSeek Harness** 身份发一条系统通知。同意即执行，忽略或超时后 30 分钟内不再打扰。检测订阅常驻在插件启动作用域，只要 DSH 在运行（页面可最小化、可在其他对话）就会提醒。
 - 音频与文稿默认存 `~/dsh-meetings/`，可在界面里换目录；每个会议一个目录，结构见下。
 - 文稿按「时间戳 + 文本」逐段保存，音频可在页面内直接播放（支持 Range）。
 - 「生成会议纪要」不是默认行为：点按钮才把会议目录注册成 DSH 工作区、建一条会话并发送纪要 prompt；模型读 `transcript.md`、写 `minutes.md`，客户端跳到该会话，后续可在同一会话里继续追问与修改。
@@ -81,7 +81,7 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 ### 会议检测与提醒（`recorder/detector.swift` + `detector.js` + `detect.js`）
 
 - 腾讯会议没有可供第三方使用的本地会议事件（AppleScript 字典、URL scheme 回调都没有；企业 API 的会议事件只覆盖 Rooms/CSAPI 创建的会议且要 OAuth），所以检测只能观察系统侧痕迹。选定的主信号是 **CoreAudio 进程对象**（macOS 14.2+）：`kAudioHardwarePropertyProcessObjectList` 枚举音频进程，`kAudioProcessPropertyIsRunningInput/Output` 判断「腾讯会议的进程此刻是否真的在采麦克风 / 放音频」。它回答的正是「在会中」这件事本身，而且**不需要任何权限**；窗口列表（`CGWindowListCopyWindowInfo`，不需要屏幕录制）只作诊断辅助，不参与结束判定（会议结束后主窗口可能还开着）。
-- `recorder/detector.swift` 是独立常驻 CLI：每 500ms 采样一次，命中 `com.tencent.meeting` / `com.tencent.wemeet` 的进程按 `{pid,bundle,executable,input,output,window}` 写一行 JSON 到 stderr（stdout 保持为空），`ready` / `sample` / `error` 三种事件；stdin `{"cmd":"stop"}`、SIGTERM/SIGINT 均优雅退出。低版本系统发 `error` 后退出，Host 侧降级为「不提示」。
+- `recorder/detector.swift` 是独立常驻 CLI：每 500ms 采样一次，命中目标 bundle（腾讯会议 `com.tencent.meeting*` / `com.tencent.wemeet*`，企业微信内置会议 `com.tencent.wwmapp`）的进程按 `{pid,bundle,executable,input,output,window}` 写一行 JSON 到 stderr（stdout 保持为空），`ready` / `sample` / `error` 三种事件；stdin `{"cmd":"stop"}`、SIGTERM/SIGINT 均优雅退出。企业微信会议跑在独立子进程 `wwmapp`（进程名「企业微信·会议」）里，匹配企业微信主进程是抓不到的；`detect.js` 再按 bundle 把客户端映射成「腾讯会议」/「企业微信会议」用于卡片与通知文案。低版本系统发 `error` 后退出，Host 侧降级为「不提示」。
 - `detector.js` 与 `capture.js` 同构：首次使用 `ensureDetector()` 编译、并发合并、失败带 stderr 尾部；`startDetector()` 消费 JSONL，`stop()` 走「stdin 优雅停 → 2s SIGTERM → 2s SIGKILL」。
 - `detect.js` 是纯状态机 + 提醒控制器：音频持续 **2s** 才判开始，音频消失持续 **12s** 才判结束（切歌、短暂静音不误判）；开始时生成 10 分钟有效的「开始记录」建议，结束时只在录音中生成 5 分钟有效的「结束记录」建议；被忽略/过期后冷却 **30 分钟**。用户同意时直接调用已有的 `startRecording()` / `stopRecording()`，手动开始/停止也会清掉过时建议。检测进程异常退出会以 5s 间隔最多重启 3 次。
 - 客户端：rail 顶部渲染建议卡片（主按钮同意、次按钮忽略），并把 `/detect/events` 作为常开 SSE 接收状态变化——订阅挂在插件启动作用域，不随「会议记录」页面卸载而断开；系统通知用渲染进程的 `new Notification('DeepSeek Harness', …)`，点击回到页面并把卡片滚到可视区。平台限制：这种通知没有并排双按钮（macOS 只把第一个 action 当主按钮，其余折叠进 hover 的「选项」），所以 MVP 选「通知叫醒 + 页内卡片二选一」，不用 helper App 伪造按钮（那需要 Developer ID 签名与公证，身份也会变成 helper 自己）。设置页「会议提醒」分组提供「发送测试通知」，用于确认当前环境是否真的展示系统通知。
@@ -143,7 +143,7 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 - SenseVoice 仍依赖 DSH 语音输入插件提供 provider；Qwen3-ASR 由本插件自带运行时与下载逻辑，不依赖 DSH 是否内置该模型。
 - SenseVoice 对专业术语、远场小音量识别率有限；实时预览会比正式分段粗糙。
 - 生成纪要的时间取决于模型响应，页面只负责跳转到会话，不等待模型写完 `minutes.md`。
-- 会议检测只支持 macOS 14.2+。它依赖「腾讯会议在占用音频」这一近似信号：如果会议中双方长时间完全静音、或系统音频没有实际音频流，开始/结束判定可能延迟；检测进程首次使用需编译，前几秒不可用。
+- 会议检测只支持 macOS 14.2+。它依赖「会议客户端在占用音频」这一近似信号（腾讯会议、企业微信内置会议）：如果会议中双方长时间完全静音、或系统音频没有实际音频流，开始/结束判定可能延迟；检测进程首次使用需编译，前几秒不可用。
 - 系统通知的身份与按钮受平台限制：Desktop 版以 DeepSeek Harness 身份弹出，但只能点击回到页面（页内卡片完成二选一）；Web profile 在浏览器里打开时身份是浏览器本身，需要单独授权通知。
 - 系统通知由客户端插件常驻发出：只要 DSH 在运行（页面最小化、切到其他对话都可以）就会提醒；DSH 完全退出后不会提醒。Desktop 版渲染进程通知是否进入系统通知中心取决于运行环境，设置页可用「发送测试通知」自检；若看不到，说明该环境不展示渲染进程通知，需要 helper App 或 DSH 上游通知服务（本版未做）。
 
