@@ -100,10 +100,19 @@ ok "package-lock / README / CHANGELOG 都是 v$VER"
 
 # ---- 5. 版本是否已被占用 --------------------------------------------------
 say "版本占用检查"
+VERSION_TAKEN=0
 if EXIST=$(npm view "$PKG@$VER" version --registry="$REG" 2>/dev/null); then
-  die "registry 上已存在 $PKG@$EXIST；npm 版本不可覆盖，请先升 version（z 位修复 / y 位功能）"
+  VERSION_TAKEN=1
+  if [ "$DRY_RUN" -eq 1 ]; then
+    # dry-run 只做打包预检（CI 每次 push 都会跑），版本已发布反而是常态；
+    # 真正发布会再走一次检查，那时才需要升 version。
+    printf '\033[33m! registry 上已存在 %s@%s；dry-run 继续，真正发布前请先升 version\033[0m\n' "$PKG" "$EXIST"
+  else
+    die "registry 上已存在 $PKG@$EXIST；npm 版本不可覆盖，请先升 version（z 位修复 / y 位功能）"
+  fi
+else
+  ok "$VER 尚未发布"
 fi
-ok "$VER 尚未发布"
 
 # ---- 6. 工作区是否干净（发布后版本不可撤回，别把未提交代码发出去）--------
 if git rev-parse --git-dir >/dev/null 2>&1; then
@@ -122,7 +131,14 @@ fi
 # ---- 7. 演练模式到此为止 --------------------------------------------------
 if [ "$DRY_RUN" -eq 1 ]; then
   say "演练发布（--dry-run，不写 registry）"
-  npm publish --dry-run --registry="$REG" --access public
+  if [ "$VERSION_TAKEN" -eq 1 ]; then
+    # npm publish --dry-run 仍会做版本占用校验，已发布版本必然失败；
+    # 打包预检在第 2 步已经用 npm pack --dry-run 完成，这里只复核包内容。
+    npm pack --dry-run >/dev/null || die '打包预检失败'
+    ok "版本 $VER 已发布，跳过 npm publish 演练（打包预检已通过）"
+  else
+    npm publish --dry-run --registry="$REG" --access public
+  fi
   ok '演练通过'
   exit 0
 fi
