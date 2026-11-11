@@ -133,7 +133,7 @@ window.__ModuleLoader__.load({
       sseGaveUp: '实时通道已断开，已切换为定时刷新。',
       transcribingHint: '转写进行中，完成后文稿会自动出现。',
       settings: '设置',
-      settingsSubtitle: '识别模型、录音存储、语言与采集方式',
+      settingsSubtitle: '识别模型、录音存储、语言、采集方式与会议提醒',
       closeDialog: '关闭',
       dialogCancel: '取消',
       sectionStorage: '存储',
@@ -206,6 +206,28 @@ window.__ModuleLoader__.load({
       adviceIntegrity: '已下载文件不完整，请重试；多次失败请切换下载源。',
       adviceStorage: '请清理磁盘空间，或检查模型目录权限。',
       adviceUnknown: '请稍后重试；若多次失败，请切换下载源。',
+      sectionDetect: '会议提醒',
+      detectHint: '只读取会议应用对麦克风、扬声器的占用状态，不读取音频内容，也不会自动开始录音。',
+      detectSwitchEnabled: '检测会议开始与结束',
+      detectSwitchNotify: '系统通知提醒',
+      detectNotifyDenied: '系统通知权限已被拒绝，可在系统设置中重新允许；页面内提醒不受影响。',
+      detectNotifyUnsupported: '当前环境不支持系统通知，只显示页面内提醒。',
+      detectTestNotify: '发送测试通知',
+      detectTestNotifyBody: '这是一条测试通知，用来确认系统能否显示来自 DeepSeek Harness 的会议提醒。',
+      detectTestNotifySent: '测试通知已发送；如果没有看到通知，说明当前桌面环境不会显示渲染进程通知。',
+      detectTestNotifyFailed: '测试通知发送失败。',
+      suggestStartTitle: '检测到会议已开始',
+      suggestStartBody: '{app}正在使用麦克风或扬声器，要现在开始记录吗？',
+      suggestStartBodyNoApp: '有会议应用正在使用麦克风或扬声器，要现在开始记录吗？',
+      suggestAcceptStart: '开始记录',
+      suggestDismissStart: '先不记录',
+      suggestEndTitle: '会议可能已结束',
+      suggestEndBody: '检测到会议应用已释放麦克风与扬声器，要结束这场录音吗？',
+      suggestAcceptEnd: '结束记录',
+      suggestDismissEnd: '继续记录',
+      suggestStartOk: '已开始记录',
+      detectUnavailableHint: '会议检测仅支持 macOS 14.2 及以上版本。',
+      suggestEndOk: '已结束记录',
     };
 
     const DICT_EN = {
@@ -333,7 +355,7 @@ window.__ModuleLoader__.load({
       sseGaveUp: 'The realtime channel closed; falling back to periodic refresh.',
       transcribingHint: 'Transcription in progress; the transcript appears when it finishes.',
       settings: 'Settings',
-      settingsSubtitle: 'Recognition models, storage, language and capture sources',
+      settingsSubtitle: 'Recognition models, storage, language, capture sources and meeting reminders',
       closeDialog: 'Close',
       dialogCancel: 'Cancel',
       sectionStorage: 'Storage',
@@ -406,6 +428,28 @@ window.__ModuleLoader__.load({
       adviceIntegrity: 'The downloaded file is incomplete; retry, and switch the source if it keeps failing.',
       adviceStorage: 'Free some disk space or check permissions of the model folder.',
       adviceUnknown: 'Retry later; switch the download source if it keeps failing.',
+      sectionDetect: 'Meeting reminders',
+      detectHint: 'Only the microphone and speaker usage of meeting apps is checked; audio is never read and recording never starts automatically.',
+      detectSwitchEnabled: 'Detect meeting start and end',
+      detectSwitchNotify: 'System notifications',
+      detectNotifyDenied: 'System notification permission is denied. Re-enable it in System Settings; in-page reminders still work.',
+      detectNotifyUnsupported: 'System notifications are not supported here; only in-page reminders are shown.',
+      detectTestNotify: 'Send test notification',
+      detectTestNotifyBody: 'This is a test notification to check whether the system shows reminders from DeepSeek Harness.',
+      detectTestNotifySent: 'Test notification sent. If you cannot see it, this desktop environment does not display renderer notifications.',
+      detectTestNotifyFailed: 'Failed to send the test notification.',
+      suggestStartTitle: 'A meeting may have started',
+      suggestStartBody: '{app} is using the microphone or speakers. Start recording this meeting?',
+      suggestStartBodyNoApp: 'A meeting app is using the microphone or speakers. Start recording this meeting?',
+      detectUnavailableHint: 'Meeting detection requires macOS 14.2 or later.',
+      suggestAcceptStart: 'Start recording',
+      suggestDismissStart: 'Not now',
+      suggestEndTitle: 'The meeting may have ended',
+      suggestEndBody: 'The meeting app released the microphone and speakers. Stop this recording?',
+      suggestAcceptEnd: 'Stop recording',
+      suggestDismissEnd: 'Keep recording',
+      suggestStartOk: 'Recording started',
+      suggestEndOk: 'Recording stopped',
     };
 
     const CSS = `
@@ -504,6 +548,19 @@ window.__ModuleLoader__.load({
   .mn-rail{position:static}
   .mn-shell{padding:18px 16px 40px}
 }
+
+/* ---------- meeting detection suggestion ---------- */
+.mn-detect{background:var(--mn-fill);border:.5px solid var(--dsw-alias-border-l3,var(--mn-line));border-radius:var(--mn-radius-lg);padding:16px}
+.mn-detect-head{display:flex;align-items:flex-start;gap:10px}
+.mn-detect-icon{display:flex;align-items:center;justify-content:center;flex:0 0 auto;width:28px;height:28px;border-radius:var(--mn-radius-sm);background:var(--mn-module);color:var(--mn-accent)}
+.mn-detect[data-kind="end"] .mn-detect-icon{color:var(--mn-warn)}
+.mn-detect-main{flex:1 1 auto;min-width:0}
+.mn-detect-title{margin:0;font-size:14px;line-height:22px;font-weight:600;color:var(--mn-text)}
+.mn-detect-body{margin:2px 0 0;font-size:12px;line-height:18px;color:var(--mn-muted);word-break:break-word}
+.mn-detect-actions{display:flex;align-items:center;gap:8px;margin-top:14px}
+.mn-detect-actions .mn-btn{flex:1 1 0;min-width:0}
+.mn-switch[data-disabled="1"]{opacity:.4;cursor:not-allowed}
+.mn-switch[data-disabled="1"] input,.mn-switch input:disabled{cursor:not-allowed}
 
 /* ---------- record panel ---------- */
 .mn-record{background:var(--mn-fill);border:.5px solid var(--dsw-alias-border-l3,var(--mn-line));border-radius:var(--mn-radius-lg);padding:16px}
@@ -874,6 +931,9 @@ window.__ModuleLoader__.load({
           prepareId: '',
           confirm: '',
           noticeSeq: 0,
+          detect: null,
+          detectNotifiedId: '',
+          detectFocusSeq: 0,
         });
 
         const useStore = () => React.useSyncExternalStore(store.subscribe, store.get);
@@ -916,6 +976,8 @@ window.__ModuleLoader__.load({
           captureSystemAudio: config?.captureSystemAudio !== false,
           captureMicrophone: config?.captureMicrophone !== false,
           chunkSeconds: Number(config?.chunkSeconds) || 25,
+          detectEnabled: config?.detectEnabled !== false,
+          detectNotify: config?.detectNotify !== false,
         });
 
         // 兼容旧版 /state：没有 models 数组时，用当前 provider 合成一个只读列表项。
@@ -1237,6 +1299,194 @@ window.__ModuleLoader__.load({
           }
         }
 
+        // -----------------------------------------------------------------
+        // Meeting detection: SSE 常开 + 渲染进程系统通知
+        // -----------------------------------------------------------------
+        let detectWanted = false;
+        let detectController = null;
+        let detectRetryTimer = 0;
+        let detectAttempts = 0;
+        let detectGivenUp = false;
+        let detectPermissionAsked = false;
+
+        const canNotify = () =>
+          typeof window !== 'undefined' && typeof window.Notification === 'function';
+
+        const detectKind = (suggestion) => (suggestion && suggestion.kind === 'end' ? 'end' : 'start');
+        const detectTitle = (kind) => t(kind === 'end' ? 'suggestEndTitle' : 'suggestStartTitle');
+        const detectBody = (kind, suggestion) => {
+          if (kind === 'end') return t('suggestEndBody');
+          const app = String(suggestion?.appName || '').trim();
+          return app ? t('suggestStartBody', { app }) : t('suggestStartBodyNoApp');
+        };
+
+        // 页面内卡片：开始建议在录音中不展示，结束建议只在录音中展示；
+        // 系统通知不做这层过滤，是否该提醒由后端状态机判定。
+
+        const maybeNotifyDetect = (detect) => {
+          const suggestion = detect && detect.suggestion;
+          if (!suggestion || !suggestion.id) return;
+          // 是否该提醒由后端状态机判定；页面可能没打开（录音状态在本地是旧的），
+          // 这里不再用本地 recording 过滤，否则离开页面后会漏掉结束提醒。
+          if (detect.enabled === false) return;
+          // 配置尚未加载时先不发通知，等 /state 回来（applyState 会再兜底一次）。
+          const saved = store.get().state;
+          if (!saved) return;
+          if (!cfgFrom(saved.config).detectNotify) return;
+          if (!canNotify()) return;
+          if (store.get().detectNotifiedId === String(suggestion.id)) return;
+          store.set({ detectNotifiedId: String(suggestion.id) });
+
+          const kind = detectKind(suggestion);
+          const heading = detectTitle(kind);
+          const body = `${heading}：${detectBody(kind, suggestion)}`;
+          const fire = () => {
+            try {
+              const notification = new window.Notification('DeepSeek Harness', {
+                body,
+                tag: suggestion.id,
+              });
+              // 无 actions：点击聚焦页面并让建议卡片可见。
+              notification.onclick = () => {
+                try {
+                  window.focus();
+                } catch {
+                  /* ignore */
+                }
+                store.set({ detectFocusSeq: store.get().detectFocusSeq + 1 });
+                try {
+                  notification.close();
+                } catch {
+                  /* ignore */
+                }
+              };
+            } catch {
+              /* 权限或平台限制时只保留页面内卡片，不打扰用户 */
+            }
+          };
+
+          const permission = window.Notification.permission;
+          if (permission === 'granted') {
+            fire();
+            return;
+          }
+          if (permission === 'default' && !detectPermissionAsked) {
+            detectPermissionAsked = true;
+            try {
+              const pending = window.Notification.requestPermission();
+              if (pending && typeof pending.then === 'function') {
+                pending
+                  .then((result) => {
+                    if (result === 'granted') fire();
+                  })
+                  .catch(() => {});
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+        };
+
+        const applyDetect = (detect) => {
+          store.set({ detect: detect && typeof detect === 'object' ? detect : null });
+          maybeNotifyDetect(detect);
+        };
+
+        const handleDetectChunk = (raw) => {
+          const dataLines = [];
+          for (const line of raw.split('\n')) {
+            const text = line.replace(/\r$/, '');
+            if (!text || text.startsWith(':')) continue;
+            if (text.startsWith('data:')) dataLines.push(text.slice(5).trimStart());
+          }
+          if (dataLines.length === 0) return;
+          let payload = null;
+          try {
+            payload = JSON.parse(dataLines.join('\n'));
+          } catch {
+            return;
+          }
+          if (!payload || typeof payload !== 'object') return;
+          if (payload.type === 'detect') applyDetect(payload.detect);
+        };
+
+        const scheduleDetectRetry = () => {
+          if (!detectWanted) return;
+          detectAttempts += 1;
+          if (detectAttempts > 3) {
+            detectWanted = false;
+            detectGivenUp = true;
+            return;
+          }
+          const delay = 1000 * Math.pow(2, detectAttempts - 1);
+          detectRetryTimer = window.setTimeout(() => {
+            detectRetryTimer = 0;
+            void openDetectSse();
+          }, delay);
+        };
+
+        const openDetectSse = async () => {
+          if (!detectWanted || detectController || detectRetryTimer) return;
+          const controller = new AbortController();
+          detectController = controller;
+          try {
+            const response = await fetch(`${API}/detect/events`, {
+              headers: { [HEADER]: '1' },
+              cache: 'no-store',
+              signal: controller.signal,
+            });
+            if (!response.ok) throw new Error(t('sseGaveUp'));
+            if (!response.body || typeof response.body.getReader !== 'function') {
+              throw new Error(t('sseGaveUp'));
+            }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (detectWanted) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              if (value && value.byteLength) detectAttempts = 0;
+              buffer += decoder.decode(value, { stream: true });
+              let cut = buffer.indexOf('\n\n');
+              while (cut >= 0) {
+                const chunk = buffer.slice(0, cut);
+                buffer = buffer.slice(cut + 2);
+                handleDetectChunk(chunk);
+                cut = buffer.indexOf('\n\n');
+              }
+            }
+            if (detectWanted) scheduleDetectRetry();
+          } catch {
+            if (detectWanted && !controller.signal.aborted) scheduleDetectRetry();
+          } finally {
+            if (detectController === controller) detectController = null;
+          }
+        };
+
+        const startDetectSse = () => {
+          if (detectGivenUp) return;
+          detectWanted = true;
+          void openDetectSse();
+        };
+
+        const stopDetectSse = () => {
+          detectWanted = false;
+          detectAttempts = 0;
+          if (detectRetryTimer) {
+            window.clearTimeout(detectRetryTimer);
+            detectRetryTimer = 0;
+          }
+          if (detectController) {
+            const controller = detectController;
+            detectController = null;
+            try {
+              controller.abort();
+            } catch {
+              /* ignore */
+            }
+          }
+        };
+
         const applyDetail = (meetingId, data) => {
           if (store.get().selectedId !== meetingId) return;
           store.set({ detail: data, detailLoading: false, detailError: '' });
@@ -1282,8 +1532,13 @@ window.__ModuleLoader__.load({
             stateError: '',
             warning: '',
           };
+          // 提醒状态优先走 SSE；轮询快照兜底（SSE 未连通时仍能弹出建议卡片）。
+          if (data.detect !== undefined) {
+            patch.detect = data.detect && typeof data.detect === 'object' ? data.detect : null;
+          }
           if (!store.get().cfgDirty) patch.cfgDraft = cfgFrom(data.config);
           store.set(patch);
+          if (data.detect) maybeNotifyDetect(patch.detect);
 
           // Auto-select the newest meeting when nothing is selected yet.
           const selectedId = store.get().selectedId;
@@ -1347,6 +1602,13 @@ window.__ModuleLoader__.load({
           if (subscribers === 1) {
             void refreshState(false);
             schedulePoll();
+            // 启动早期 SSE 连不上（宿主还没就绪）时会在几次退避后放弃，
+            // 页面打开/刷新时给检测订阅一次重新连接的机会。
+            if (detectGivenUp) {
+              detectGivenUp = false;
+              detectAttempts = 0;
+              startDetectSse();
+            }
           }
           return () => {
             subscribers -= 1;
@@ -1365,9 +1627,17 @@ window.__ModuleLoader__.load({
         const cfgEquals = (a, b) =>
           !!a &&
           !!b &&
-          ['storageDir', 'transcribeMode', 'language', 'providerId', 'chunkSeconds', 'captureSystemAudio', 'captureMicrophone'].every(
-            (key) => String(a[key]) === String(b[key]),
-          );
+          [
+            'storageDir',
+            'transcribeMode',
+            'language',
+            'providerId',
+            'chunkSeconds',
+            'captureSystemAudio',
+            'captureMicrophone',
+            'detectEnabled',
+            'detectNotify',
+          ].every((key) => String(a[key]) === String(b[key]));
 
         const applyDraft = (patch) => {
           store.set({ cfgDraft: { ...(store.get().cfgDraft || cfgFrom(null)), ...patch } });
@@ -1419,6 +1689,50 @@ window.__ModuleLoader__.load({
           }
         };
 
+        // 系统通知权限只在用户点击「保存配置」的手势内申请一次；拒绝后不再打扰。
+        const requestDetectPermission = () => {
+          if (!canNotify()) return;
+          try {
+            if (window.Notification.permission !== 'default') return;
+            const pending = window.Notification.requestPermission();
+            if (pending && typeof pending.then === 'function') pending.catch(() => {});
+          } catch {
+            /* ignore */
+          }
+        };
+
+        // 设置页的「发送测试通知」：验证当前桌面环境是否真的展示渲染进程通知。
+        const sendTestNotification = async () => {
+          if (!canNotify()) {
+            showNotice(t('detectNotifyUnsupported'));
+            return;
+          }
+          const fire = () => {
+            try {
+              new window.Notification('DeepSeek Harness', { body: t('detectTestNotifyBody') });
+              showNotice(t('detectTestNotifySent'));
+            } catch (error) {
+              showError(error, t('detectTestNotifyFailed'));
+            }
+          };
+          try {
+            if (window.Notification.permission === 'default') {
+              const result = await window.Notification.requestPermission();
+              if (result !== 'granted') {
+                showNotice(t('detectNotifyDenied'));
+                return;
+              }
+            }
+            if (window.Notification.permission !== 'granted') {
+              showNotice(t('detectNotifyDenied'));
+              return;
+            }
+            fire();
+          } catch (error) {
+            showError(error, t('detectTestNotifyFailed'));
+          }
+        };
+
         const saveConfig = async () => {
           const draft = store.get().cfgDraft || cfgFrom(null);
           const storageDir = String(draft.storageDir || '').trim();
@@ -1440,6 +1754,8 @@ window.__ModuleLoader__.load({
               captureSystemAudio: !!draft.captureSystemAudio,
               captureMicrophone: !!draft.captureMicrophone,
               chunkSeconds,
+              detectEnabled: !!draft.detectEnabled,
+              detectNotify: !!draft.detectNotify,
             });
             const current = store.get();
             store.set({
@@ -1453,10 +1769,34 @@ window.__ModuleLoader__.load({
                 : current.state,
             });
             showNotice(t('savedConfig'));
+            if (draft.detectEnabled && draft.detectNotify) requestDetectPermission();
             void refreshState(true);
           } catch (error) {
             store.set({ cfgSaving: false });
             showError(error);
+          }
+        };
+
+        // 建议卡片按钮：同意即开始/结束录音，不同意只忽略本次建议。
+        const ackDetect = async (accept) => {
+          const current = store.get();
+          const suggestion = current.detect && current.detect.suggestion;
+          if (!suggestion || !suggestion.id || current.busy) return;
+          const kind = detectKind(suggestion);
+          store.set({ busy: 'detect' });
+          try {
+            const data = await apiPost('/detect/ack', { id: String(suggestion.id), accept: !!accept });
+            const nextDetect =
+              data && data.detect && typeof data.detect === 'object'
+                ? data.detect
+                : { ...(store.get().detect || {}), suggestion: null };
+            store.set({ busy: '', detect: nextDetect });
+            if (accept) showNotice(kind === 'end' ? t('suggestEndOk') : t('suggestStartOk'));
+            void refreshState(true);
+          } catch (error) {
+            store.set({ busy: '' });
+            showError(error);
+            void refreshState(true);
           }
         };
 
@@ -2941,12 +3281,89 @@ window.__ModuleLoader__.load({
           );
         }
 
+        // 会议建议卡片：rail 内常驻位置，开始建议在空闲时出现，结束建议只在录音中出现。
+        function DetectSuggestion() {
+          const s = useStore();
+          const detect = s.detect;
+          const suggestion = detect && detect.suggestion ? detect.suggestion : null;
+          const recordingActive = !!s.state?.recording?.active;
+          const cardRef = React.useRef(null);
+          const focusSeq = s.detectFocusSeq;
+
+          // 系统通知被点击后，把焦点带回页面并保证卡片在可视区域内。
+          React.useEffect(() => {
+            if (!focusSeq) return;
+            const node = cardRef.current;
+            if (!node || typeof node.scrollIntoView !== 'function') return;
+            try {
+              node.scrollIntoView({ block: 'nearest' });
+            } catch {
+              /* ignore */
+            }
+          }, [focusSeq]);
+
+          if (!suggestion) return null;
+          const kind = detectKind(suggestion);
+          if (kind === 'start' && recordingActive) return null;
+          if (kind === 'end' && !recordingActive) return null;
+          const title = detectTitle(kind);
+          const body = detectBody(kind, suggestion);
+          const busy = s.busy === 'detect';
+          return h(
+            'section',
+            { ref: cardRef, className: 'mn-detect', 'data-kind': kind, 'aria-label': title },
+            h(
+              'div',
+              { className: 'mn-detect-head' },
+              h('span', { className: 'mn-detect-icon' }, h(Icon, { name: kind === 'end' ? 'stop' : 'mic' })),
+              h(
+                'div',
+                { className: 'mn-detect-main' },
+                h('h2', { className: 'mn-detect-title' }, title),
+                h('p', { className: 'mn-detect-body' }, body),
+              ),
+            ),
+            h(
+              'div',
+              { className: 'mn-detect-actions' },
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'mn-btn',
+                  'data-variant': 'primary',
+                  disabled: busy,
+                  onClick: () => void ackDetect(true),
+                },
+                kind === 'end' ? t('suggestAcceptEnd') : t('suggestAcceptStart'),
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'mn-btn',
+                  'data-variant': 'outline',
+                  disabled: busy,
+                  onClick: () => void ackDetect(false),
+                },
+                kind === 'end' ? t('suggestDismissEnd') : t('suggestDismissStart'),
+              ),
+            ),
+          );
+        }
+
         function SettingsDialog() {
           const s = useStore();
           const draft = s.cfgDraft || cfgFrom(s.state?.config);
           const languages = s.state?.provider?.languages || ['auto', 'zh', 'en', 'yue', 'ja', 'ko'];
           const models = modelList(s.state);
           const recording = !!s.state?.recording?.active;
+          const notifyPermission = canNotify() ? window.Notification.permission : '';
+          const detectNotifyDenied = notifyPermission === 'denied';
+          const detectNotifyUnsupported = !canNotify();
+          const detectState = s.state?.detect || null;
+          const detectUnavailable = !!detectState && detectState.available === false;
+          const detectError = detectState && detectState.error ? String(detectState.error) : '';
           return h(
             Modal,
             {
@@ -3089,6 +3506,75 @@ window.__ModuleLoader__.load({
                 h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('captureHint')),
               ),
             ),
+            h(
+              'div',
+              { className: 'mn-group' },
+              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionDetect'))),
+              h(
+                'div',
+                { className: 'mn-field' },
+                h(
+                  'label',
+                  { className: 'mn-switch' },
+                  h('input', {
+                    type: 'checkbox',
+                    role: 'switch',
+                    'aria-checked': draft.detectEnabled ? 'true' : 'false',
+                    checked: !!draft.detectEnabled,
+                    onChange: (event) => editDraft({ detectEnabled: event.target.checked }),
+                  }),
+                  h('span', { className: 'mn-switch-track' }),
+                  h('span', null, t('detectSwitchEnabled')),
+                ),
+                h(
+                  'label',
+                  {
+                    className: 'mn-switch',
+                    style: { marginTop: '10px' },
+                    'data-disabled': draft.detectEnabled ? '0' : '1',
+                  },
+                  h('input', {
+                    type: 'checkbox',
+                    role: 'switch',
+                    'aria-checked': draft.detectNotify ? 'true' : 'false',
+                    checked: !!draft.detectNotify,
+                    disabled: !draft.detectEnabled,
+                    onChange: (event) => editDraft({ detectNotify: event.target.checked }),
+                  }),
+                  h('span', { className: 'mn-switch-track' }),
+                  h('span', null, t('detectSwitchNotify')),
+                ),
+                h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('detectHint')),
+                detectUnavailable
+                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectUnavailableHint'))
+                  : null,
+                detectError
+                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, detectError)
+                  : null,
+                detectNotifyDenied
+                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectNotifyDenied'))
+                  : null,
+                detectNotifyUnsupported
+                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectNotifyUnsupported'))
+                  : null,
+                h(
+                  'div',
+                  { style: { marginTop: '12px' } },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'mn-btn',
+                      'data-variant': 'outline',
+                      'data-size': 'small',
+                      disabled: detectNotifyUnsupported,
+                      onClick: () => void sendTestNotification(),
+                    },
+                    t('detectTestNotify'),
+                  ),
+                ),
+              ),
+            ),
           );
         }
 
@@ -3136,7 +3622,7 @@ window.__ModuleLoader__.load({
               s.error ? h(Banner, { tone: 'error', onClose: () => store.set({ error: '' }) }, s.error) : null,
               s.warning ? h(Banner, { tone: 'warn', onClose: () => store.set({ warning: '' }) }, s.warning) : null,
               s.sseDown ? h(Banner, { tone: 'warn', onClose: () => store.set({ sseDown: false }) }, t('sseGaveUp')) : null,
-              h('div', { className: 'mn-layout' }, h('aside', { className: 'mn-rail' }, h(RecordPanel), h(MeetingList)), h(DetailPane)),
+              h('div', { className: 'mn-layout' }, h('aside', { className: 'mn-rail' }, h(DetectSuggestion), h(RecordPanel), h(MeetingList)), h(DetailPane)),
             ),
             s.settingsOpen ? h(SettingsDialog) : null,
             h(ConfirmDialog, {
@@ -3160,6 +3646,26 @@ window.__ModuleLoader__.load({
             h(Toast, { text: s.notice, seq: s.noticeSeq }),
           );
         }
+        // 检测订阅与系统通知提升到插件启动作用域：不依赖「会议记录」页面挂载，
+        // 页面最小化或切到其他对话时仍能收到建议并弹系统通知。
+        ctx.effect(() => {
+          let disposed = false;
+          void (async () => {
+            if (!store.get().state) {
+              try {
+                await refreshState(true);
+              } catch {
+                /* 页面打开后轮询会继续补齐状态 */
+              }
+            }
+            if (!disposed) startDetectSse();
+          })();
+          return () => {
+            disposed = true;
+            stopDetectSse();
+          };
+        });
+
         ctx.slots.inject('sidebar.panellist', () =>
           ctx.slots.register(
             {

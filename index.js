@@ -18,6 +18,7 @@ import {
   DEFAULT_CONFIG,
   WavSink,
   createMeeting,
+  defaultTitle,
   deleteMeeting,
   ensureStorageDir,
   listMeetings,
@@ -29,6 +30,7 @@ import {
   writeMeeting,
 } from './storage.js';
 import { ensureRecorder, platformInfo, recorderState, startRecorder } from './capture.js';
+import { createMeetingDetector } from './detect.js';
 import {
   RealtimeSegmenter,
   cancelPrepare,
@@ -109,6 +111,10 @@ export function apply(ctx, config = {}) {
   let recording = null;
   /** SSE 客户端响应对象集合。 */
   const eventClients = new Set();
+  /** 会议检测 SSE 客户端；检测流与录音流分开，页面打开期间一直在线。 */
+  const detectClients = new Set();
+  /** 会议检测运行时；因为要引用 startRecording/stopRecording，稍后再创建。 */
+  let detector = null;
   /** 后台转写任务：meetingId → Promise。 */
   const transcribeJobs = new Map();
 
@@ -193,6 +199,19 @@ export function apply(ctx, config = {}) {
 
   const broadcastState = () => broadcast({ type: 'state', recording: recordingPayload() });
 
+  const broadcastDetect = () => {
+    if (!detectClients.size) return;
+    const event = { type: 'detect', detect: detector ? detector.snapshot() : null };
+    const payload = `data: ${JSON.stringify(event)}\n\n`;
+    for (const res of detectClients) {
+      try {
+        res.write(payload);
+      } catch {
+        detectClients.delete(res);
+      }
+    }
+  };
+
   async function buildState() {
     const config = currentConfig;
     const platform = platformInfo();
@@ -214,6 +233,7 @@ export function apply(ctx, config = {}) {
       speechAvailable: !!service,
       models,
       recording: recordingPayload(),
+      detect: detector ? detector.snapshot() : null,
       meetings,
       capabilities: { buildRecorder: platform.supported, recorderBuilt: recorder.built },
     };
@@ -415,6 +435,7 @@ export function apply(ctx, config = {}) {
         session.previewTimer = setInterval(() => runRealtimePreview(session), 3500);
         session.previewTimer.unref?.();
       }
+      detector?.notifyRecordingStarted();
       broadcastState();
       return { meetingId: session.id, startedAt: session.meta.startedAt, mode: session.mode };
     } catch (error) {
@@ -530,6 +551,7 @@ export function apply(ctx, config = {}) {
       await writeTranscript(session.dir, session.meta);
     }
 
+    detector?.notifyRecordingStopped();
     broadcastState();
     return {
       meetingId: session.id,
@@ -550,6 +572,7 @@ export function apply(ctx, config = {}) {
     }
     await session.wav.close().catch(() => {});
     await deleteMeeting(currentConfig.storageDir, session.id).catch(() => {});
+    detector?.notifyRecordingStopped();
     broadcastState();
     return { meetingId: session.id };
   }
@@ -576,8 +599,15 @@ export function apply(ctx, config = {}) {
       captureSystemAudio: next.captureSystemAudio,
       captureMicrophone: next.captureMicrophone,
       chunkSeconds: next.chunkSeconds,
+      detectEnabled: next.detectEnabled,
+      detectNotify: next.detectNotify,
+      detectStartSustainSeconds: next.detectStartSustainSeconds,
+      detectEndGraceSeconds: next.detectEndGraceSeconds,
+      detectCooldownMinutes: next.detectCooldownMinutes,
     }));
     currentConfig = next;
+    // 检测开关或去抖参数变了：按新配置启停检测进程并广播新快照。
+    detector?.applyConfig();
     return next;
   }
 
@@ -589,7 +619,23 @@ export function apply(ctx, config = {}) {
     'captureSystemAudio',
     'captureMicrophone',
     'chunkSeconds',
+    'detectEnabled',
+    'detectNotify',
+    'detectStartSustainSeconds',
+    'detectEndGraceSeconds',
+    'detectCooldownMinutes',
   ]);
+
+  // ---- 会议检测 ----
+  detector = createMeetingDetector({
+    getConfig: () => currentConfig,
+    isRecording: () => Boolean(recording),
+    startRecording: (options) => startRecording(options),
+    stopRecording: () => stopRecording(),
+    onDetectChange: () => broadcastDetect(),
+    getRecordingTitle: () => (recording ? recording.meta.title : ''),
+    log: (message) => console.warn('[dsh-meeting-notes]', message),
+  });
 
   // ---- 路由 ----
   const guard = (handler) => async (req, res) => {
@@ -638,6 +684,45 @@ export function apply(ctx, config = {}) {
         if (!Object.keys(patch).length) throw new HttpError(400, '没有可保存的配置项');
         const config = await saveConfig(patch);
         sendJson(res, { ok: true, config, storage: await storageStatus(config.storageDir) });
+      },
+    },
+    {
+      kind: 'exact',
+      path: `${PREFIX}/detect`,
+      handler: async (req, res) => {
+        requireGet(req);
+        if (!detector) throw new HttpError(503, '会议检测尚未就绪');
+        sendJson(res, { ok: true, detect: detector.snapshot() });
+      },
+    },
+    {
+      kind: 'exact',
+      path: `${PREFIX}/detect/ack`,
+      handler: async (req, res) => {
+        requireWrite(req);
+        if (!detector) throw new HttpError(503, '会议检测尚未就绪');
+        const body = await readJsonBody(req);
+        const id = String(body.id || '').trim();
+        if (!id) throw new HttpError(400, '缺少提醒 id');
+        if (typeof body.accept !== 'boolean') throw new HttpError(400, 'accept 必须是布尔值');
+        const result = await detector.ack(id, body.accept);
+        sendJson(res, { ok: true, ...result, detect: detector.snapshot() });
+      },
+    },
+    {
+      kind: 'exact',
+      path: `${PREFIX}/detect/events`,
+      handler: async (req, res) => {
+        requireGet(req);
+        if (!detector) throw new HttpError(503, '会议检测尚未就绪');
+        res.statusCode = 200;
+        res.setHeader('content-type', 'text/event-stream; charset=utf-8');
+        res.setHeader('cache-control', 'no-store');
+        res.setHeader('connection', 'keep-alive');
+        res.write(': connected\n\n');
+        res.write(`data: ${JSON.stringify({ type: 'detect', detect: detector.snapshot() })}\n\n`);
+        detectClients.add(res);
+        res.on('close', () => detectClients.delete(res));
       },
     },
     {
@@ -840,6 +925,13 @@ export function apply(ctx, config = {}) {
           eventClients.delete(res);
         }
       }
+      for (const res of detectClients) {
+        try {
+          res.write(': ping\n\n');
+        } catch {
+          detectClients.delete(res);
+        }
+      }
     }, 15_000);
     timer.unref?.();
     return () => {
@@ -852,11 +944,20 @@ export function apply(ctx, config = {}) {
         }
       }
       eventClients.clear();
+      for (const res of detectClients) {
+        try {
+          res.end();
+        } catch {
+          /* ignore */
+        }
+      }
+      detectClients.clear();
     };
   });
 
-  // 插件卸载时收尾：停止录音进程、关闭 SSE。
+  // 插件卸载时收尾：停止录音进程、会议检测进程、关闭 SSE。
   ctx.effect(() => () => {
+    detector?.dispose();
     const session = recording;
     recording = null;
     if (session) {
@@ -869,6 +970,9 @@ export function apply(ctx, config = {}) {
       session.wav.close().catch(() => {});
     }
   });
+
+  // 按配置启动会议检测（默认开启；检测到腾讯会议开始/结束时弹建议）。
+  detector.applyConfig();
 }
 
 function requireDelete(req) {

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3.0
+
+会议提醒：检测腾讯会议开始/结束，建议开始或结束录音。
+
+- 检测：新增 `recorder/detector.swift`（CoreAudio 进程对象 + CGWindowList，macOS 14.2+，无需 TCC 权限）与 `detector.js`（编译/进程管理、JSONL 事件）；只读麦克风/扬声器占用，不读音频内容、不自动录音。腾讯会议没有可用的本地会议事件，音频占用是「在会中」的近似真值。
+- 状态机：`detect.js` 音频持续 2s 判开始、消失 12s 判结束；建议 10/5 分钟过期，忽略或过期后 30 分钟冷却；检测进程异常以 5s 间隔最多重启 3 次。同意时直接复用现有开始/结束录音逻辑，手动录音也会清掉过时建议。
+- 客户端：rail 新增建议卡片（同意 / 忽略）；`/detect/events` 订阅提升到插件启动作用域，页面最小化或切到其他对话时仍能收到建议并弹系统通知，不再依赖「会议记录」页处于加载状态；以 DeepSeek Harness 身份发送系统通知（点击回到页面），设置页新增「会议提醒」分组（检测开关、系统通知开关、权限与平台不支持提示）以及「发送测试通知」按钮，用于自检当前环境是否真的展示渲染进程通知。
+- 接口：新增 `GET /detect`、`POST /detect/ack`、`GET /detect/events`；`/state` 增加 `detect` 快照；`/config` 增加 `detectEnabled`、`detectNotify`、`detectStartSustainSeconds`、`detectEndGraceSeconds`、`detectCooldownMinutes`，`normalizeConfig` 负责校验与夹取。
+- 构建/测试：`recorder/build.sh` 支持自定义源文件，module-cache 失效时自动清缓存重试一次；新增 `test/detect.test.mjs`（10 项纯逻辑测试）；`test/preview.mjs` 增加会议建议卡片与设置分组场景。
+- 已知限制：检测仅 macOS 14.2+；结束判定依赖音频占用，会议中长时间双方完全静音时可能延迟；系统通知由客户端插件常驻发出，DSH 运行期间（页面可最小化或在其他对话）有效，DSH 完全退出后不提醒；Desktop 渲染进程通知是否进入通知中心取决于环境，可用设置页「发送测试通知」自检，彻底后台方案（helper App / DSH 上游通知）未做；渲染进程通知只能点击回到页面、无法并排双按钮，MVP 采用「系统通知叫醒 + 页内卡片二选一」。
+
 ## v0.2.1
 
 发布链路改用 npm 可信发布（OIDC），CI 打 tag 即自动发版，仓库不存密钥。

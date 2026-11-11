@@ -2,7 +2,7 @@
 
 一个 DSH Web 插件：左侧栏「会议记录」入口，把「系统声音 + 麦克风」混音录下来，用本地语音识别模型（默认 SenseVoiceSmall，也可切换本插件自带的 Qwen3-ASR）转成中文文稿（可夹少量英文），需要时一键把转写交给 DSH 大模型整理成会议纪要，并在左侧工作区生成一条可继续聊天的会话记录。
 
-当前版本：**v0.2.1**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
+当前版本：**v0.3.0**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
 
 ## 功能
 
@@ -17,6 +17,7 @@
   - **Qwen3-ASR-0.6B (INT8)**：本插件自带 provider（`qwen3.js` + `qwen3-worker.js`，依赖 `sherpa-onnx-node`），约 1.15 GB，中文/方言/中英混说更稳，但非流式、单次窗口约 30 秒，更适合「结束后转写」。
 - 模型列表按 provider 动态生成：后续再接入其他 ASR 模型会自动出现在列表里，可分别下载、切换与查看准备进度。
 - 语言默认 `zh`，中文为主；SenseVoice 自带中英混说能力，英文术语、产品名会原样保留。
+- **会议提醒**（macOS 14.2+，默认开启）：后台检测腾讯会议是否真的开始/结束（只看它对麦克风、扬声器的占用状态，不读音频内容、不自动录音）；开始时页面内弹出「要开始记录吗」建议，结束时弹出「要结束记录吗」建议，同时以 **DeepSeek Harness** 身份发一条系统通知。同意即执行，忽略或超时后 30 分钟内不再打扰。检测订阅常驻在插件启动作用域，只要 DSH 在运行（页面可最小化、可在其他对话）就会提醒。
 - 音频与文稿默认存 `~/dsh-meetings/`，可在界面里换目录；每个会议一个目录，结构见下。
 - 文稿按「时间戳 + 文本」逐段保存，音频可在页面内直接播放（支持 Range）。
 - 「生成会议纪要」不是默认行为：点按钮才把会议目录注册成 DSH 工作区、建一条会话并发送纪要 prompt；模型读 `transcript.md`、写 `minutes.md`，客户端跳到该会话，后续可在同一会话里继续追问与修改。
@@ -27,7 +28,8 @@
 - DSH（Web profile），Host 需要 `webServer` 服务；纪要功能需要 `workspaceRegistry` 与 `sessionController` 服务（Desktop 版默认都有）。
 - 本地识别需要 DSH 的语音输入插件（`@deepseek-ai/dsh-experimental-speech-to-text` + `-sensevoice`）已启用；SenseVoice 模型需先下载准备，可直接在设置页「识别模型」里完成，插件检测不到 provider 时会提示，不会静默失败。
 - Qwen3-ASR 由本插件注册到同一个 `ctx.speechToText` 服务：依赖 `sherpa-onnx-node`（`^2.0.1`，含 macOS arm64 原生 ONNX 运行时），模型文件放在 `~/.dsh/speech-to-text/qwen3-asr-0.6b/`（可用 `qwen3ModelDir` 配置覆盖），下载源为 ModelScope（国内推荐）或 HF-Mirror。
-- 录制需要 macOS 13+（ScreenCaptureKit 音频采集），首次使用由插件调用 `swiftc` 编译 `recorder/`（Xcode Command Line Tools，约 10–30 秒）。
+- 录制需要 macOS 13+（ScreenCaptureKit 音频采集）；会议检测需要 macOS 14.2+（CoreAudio 进程对象 API）。首次使用由插件调用 `swiftc` 编译 `recorder/`（Xcode Command Line Tools，约 10–30 秒）。
+- 会议检测不需要任何 TCC 权限（不读音频、不截屏）；系统通知复用 DeepSeek Harness 的通知授权，首次发通知时系统会询问是否允许。
 - 系统权限：**屏幕录制**（采系统声音）与**麦克风**，授予对象是 DeepSeek Harness。未授权时页面会给出中文提示与跳转说明。
 - 运行时依赖只有 `sherpa-onnx-node`（Qwen3-ASR 的 ONNX 运行时）；客户端只用 React（由 DSH 模块表提供）与浏览器 `fetch` / `ReadableStream`，无构建步骤、无数据库。
 
@@ -76,6 +78,15 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 - 首次使用或源码更新后由 `capture.js` 调 `build.sh` 编译到 `recorder/.build/`（已 gitignore），并发调用合并为一次构建。
 - 之所以不用 CoreAudio process tap：本机实测 `AudioHardwareCreateProcessTap` + aggregate device 创建与启动都返回成功，但 IOProc 回调永远是 0 帧；ScreenCaptureKit 稳定可用，因此采集后端按「平台接口 + darwin 实现」组织，后续加 Windows（WASAPI loopback）/ Linux（PulseAudio monitor）只需替换这一层。
 
+### 会议检测与提醒（`recorder/detector.swift` + `detector.js` + `detect.js`）
+
+- 腾讯会议没有可供第三方使用的本地会议事件（AppleScript 字典、URL scheme 回调都没有；企业 API 的会议事件只覆盖 Rooms/CSAPI 创建的会议且要 OAuth），所以检测只能观察系统侧痕迹。选定的主信号是 **CoreAudio 进程对象**（macOS 14.2+）：`kAudioHardwarePropertyProcessObjectList` 枚举音频进程，`kAudioProcessPropertyIsRunningInput/Output` 判断「腾讯会议的进程此刻是否真的在采麦克风 / 放音频」。它回答的正是「在会中」这件事本身，而且**不需要任何权限**；窗口列表（`CGWindowListCopyWindowInfo`，不需要屏幕录制）只作诊断辅助，不参与结束判定（会议结束后主窗口可能还开着）。
+- `recorder/detector.swift` 是独立常驻 CLI：每 500ms 采样一次，命中 `com.tencent.meeting` / `com.tencent.wemeet` 的进程按 `{pid,bundle,executable,input,output,window}` 写一行 JSON 到 stderr（stdout 保持为空），`ready` / `sample` / `error` 三种事件；stdin `{"cmd":"stop"}`、SIGTERM/SIGINT 均优雅退出。低版本系统发 `error` 后退出，Host 侧降级为「不提示」。
+- `detector.js` 与 `capture.js` 同构：首次使用 `ensureDetector()` 编译、并发合并、失败带 stderr 尾部；`startDetector()` 消费 JSONL，`stop()` 走「stdin 优雅停 → 2s SIGTERM → 2s SIGKILL」。
+- `detect.js` 是纯状态机 + 提醒控制器：音频持续 **2s** 才判开始，音频消失持续 **12s** 才判结束（切歌、短暂静音不误判）；开始时生成 10 分钟有效的「开始记录」建议，结束时只在录音中生成 5 分钟有效的「结束记录」建议；被忽略/过期后冷却 **30 分钟**。用户同意时直接调用已有的 `startRecording()` / `stopRecording()`，手动开始/停止也会清掉过时建议。检测进程异常退出会以 5s 间隔最多重启 3 次。
+- 客户端：rail 顶部渲染建议卡片（主按钮同意、次按钮忽略），并把 `/detect/events` 作为常开 SSE 接收状态变化——订阅挂在插件启动作用域，不随「会议记录」页面卸载而断开；系统通知用渲染进程的 `new Notification('DeepSeek Harness', …)`，点击回到页面并把卡片滚到可视区。平台限制：这种通知没有并排双按钮（macOS 只把第一个 action 当主按钮，其余折叠进 hover 的「选项」），所以 MVP 选「通知叫醒 + 页内卡片二选一」，不用 helper App 伪造按钮（那需要 Developer ID 签名与公证，身份也会变成 helper 自己）。设置页「会议提醒」分组提供「发送测试通知」，用于确认当前环境是否真的展示系统通知。
+- 相关配置：`detectEnabled`（默认 `true`）、`detectNotify`（默认 `true`）可在设置页「会议提醒」分组里改；`detectStartSustainSeconds`（2）、`detectEndGraceSeconds`（12）、`detectCooldownMinutes`（30）只在配置层可调。
+
 ### 转写（`asr.js`）
 
 - `ctx.speechToText.snapshot()` 生成设置页模型列表（`/state.models`：名称、下载源、磁盘/内存估算、准备阶段与步骤、下载进度）；`listProviders()` 找本地 provider（配置的 id 优先，其次名字含 sensevoice，再次第一个 `host-local`），未就绪时 `prepare(providerId, { downloadSource })` 并在后台轮询到 `ready`。
@@ -110,13 +121,16 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/state` | 平台、配置、存储、识别模型列表与准备进度、录音状态、会议列表 |
-| POST | `/config` | 保存配置（storageDir / transcribeMode / language / providerId / captureSystemAudio / captureMicrophone / chunkSeconds） |
+| POST | `/config` | 保存配置（storageDir / transcribeMode / language / providerId / captureSystemAudio / captureMicrophone / chunkSeconds / detectEnabled / detectNotify / detectStartSustainSeconds / detectEndGraceSeconds / detectCooldownMinutes） |
 | POST | `/prepare` | 准备指定模型（body：`{ providerId?, downloadSource? }`，为空时用当前配置的模型） |
 | POST | `/prepare/cancel` | 取消模型准备（body：`{ providerId }`） |
 | POST | `/recordings` | 开始录音（body：`{ title?, mode? }`） |
 | POST | `/recordings/stop` | 停止并落盘（`after` 模式转写在后台继续） |
 | POST | `/recordings/cancel` | 放弃录音并删除本次目录 |
 | GET | `/recordings/events` | SSE：`state` / `level` / `partial` / `segment` / `error` |
+| GET | `/detect` | 会议检测快照（是否运行、是否在会中、建议卡片、冷却时间） |
+| POST | `/detect/ack` | 处理会议建议（body：`{ id, accept }`；接受时直接开始/结束录音） |
+| GET | `/detect/events` | SSE：检测状态与建议变化（`detect`） |
 | GET | `/meetings/<id>` | 会议详情 + `transcript.md` + `minutes.md` |
 | GET | `/meetings/<id>/audio` | WAV 音频，支持 Range |
 | POST | `/meetings/<id>/transcribe` | 重新转写 |
@@ -129,6 +143,9 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 - SenseVoice 仍依赖 DSH 语音输入插件提供 provider；Qwen3-ASR 由本插件自带运行时与下载逻辑，不依赖 DSH 是否内置该模型。
 - SenseVoice 对专业术语、远场小音量识别率有限；实时预览会比正式分段粗糙。
 - 生成纪要的时间取决于模型响应，页面只负责跳转到会话，不等待模型写完 `minutes.md`。
+- 会议检测只支持 macOS 14.2+。它依赖「腾讯会议在占用音频」这一近似信号：如果会议中双方长时间完全静音、或系统音频没有实际音频流，开始/结束判定可能延迟；检测进程首次使用需编译，前几秒不可用。
+- 系统通知的身份与按钮受平台限制：Desktop 版以 DeepSeek Harness 身份弹出，但只能点击回到页面（页内卡片完成二选一）；Web profile 在浏览器里打开时身份是浏览器本身，需要单独授权通知。
+- 系统通知由客户端插件常驻发出：只要 DSH 在运行（页面最小化、切到其他对话都可以）就会提醒；DSH 完全退出后不会提醒。Desktop 版渲染进程通知是否进入系统通知中心取决于运行环境，设置页可用「发送测试通知」自检；若看不到，说明该环境不展示渲染进程通知，需要 helper App 或 DSH 上游通知服务（本版未做）。
 
 ## 开发
 
@@ -136,6 +153,7 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 - `test/smoke.mjs`：客户端 UI 冒烟（真实 React + jsdom，stub fetch，覆盖首屏、开始录音、生成纪要跳转、设置弹窗与标签切换）。
 - `test/models.mjs`：设置页模型列表交互（多模型列表、切换模型、下载进度、取消准备）。
 - `test/qwen3.mjs`：Qwen3 provider 纯逻辑测试（WAV 解析、切块上限、下载错误归类、provider 元数据与未准备状态），不联网、不加载模型。
+- `test/detect.test.mjs`：会议检测纯逻辑测试（状态机去抖/宽限/只听、建议生成与过期、接受即开始/结束录音、忽略冷却、配置关闭不启动、去抖参数热更新），不编译 Swift、不弹通知。
 - UI 测试都从仓库根目录解析 `react` / `react-dom` / `jsdom`，直接 `node test/smoke.mjs`、`node test/models.mjs`、`node test/qwen3.mjs` 运行。
 - `test/preview.mjs`：视觉预览（同一套 jsdom + 真实 React，把主界面几个状态渲染成静态 HTML 到 `/tmp/mn-preview`，再用无头 Chrome 截图；需带 `--virtual-time-budget` 等动画结束）。
 

@@ -24,7 +24,19 @@ export const DEFAULT_CONFIG = {
   captureSystemAudio: true,
   captureMicrophone: true,
   chunkSeconds: 25,
+  // 会议检测（腾讯会议开始/结束提醒）。检测只读取音频占用状态，不读音频内容。
+  detectEnabled: true,
+  detectNotify: true,
+  detectStartSustainSeconds: 2,
+  detectEndGraceSeconds: 12,
+  detectCooldownMinutes: 30,
 };
+
+function clampNumber(value, fallback, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(number)));
+}
 
 const MODES = new Set(['after', 'realtime']);
 const LANGUAGES = new Set(['zh', 'en', 'auto', 'yue', 'ja', 'ko']);
@@ -64,7 +76,26 @@ export function normalizeConfig(input, fallback = DEFAULT_CONFIG) {
     throw new Error('系统音频和麦克风至少要开启一个');
   }
 
-  return { storageDir, transcribeMode: mode, language, providerId, captureSystemAudio, captureMicrophone, chunkSeconds };
+  const detectEnabled = pick('detectEnabled') !== false;
+  const detectNotify = pick('detectNotify') !== false;
+  const detectStartSustainSeconds = clampNumber(pick('detectStartSustainSeconds'), 2, 1, 10);
+  const detectEndGraceSeconds = clampNumber(pick('detectEndGraceSeconds'), 12, 5, 60);
+  const detectCooldownMinutes = clampNumber(pick('detectCooldownMinutes'), 30, 1, 180);
+
+  return {
+    storageDir,
+    transcribeMode: mode,
+    language,
+    providerId,
+    captureSystemAudio,
+    captureMicrophone,
+    chunkSeconds,
+    detectEnabled,
+    detectNotify,
+    detectStartSustainSeconds,
+    detectEndGraceSeconds,
+    detectCooldownMinutes,
+  };
 }
 
 export async function ensureStorageDir(dir) {

@@ -273,6 +273,8 @@ if (settingsBtn) {
   ok(!!dialog && (dialog.textContent || '').includes('识别模型'), '设置页出现「识别模型」分组');
   ok(!!dialog && (dialog.textContent || '').includes('SenseVoiceSmall'), '设置页模型列表显示 SenseVoiceSmall');
   ok(!!dialog && (dialog.textContent || '').includes('当前使用'), '设置页模型列表标出当前使用的模型');
+  ok(!!dialog && (dialog.textContent || '').includes('会议提醒'), '设置页出现「会议提醒」分组');
+  ok(!!dialog && (dialog.textContent || '').includes('发送测试通知'), '设置页提供「发送测试通知」按钮');
   const dirInput = dialog && dialog.querySelector('input[type="text"]');
   ok(!!dirInput, '弹窗内出现存储目录输入框');
   const switchInput = dialog && dialog.querySelector('input[type="checkbox"]');

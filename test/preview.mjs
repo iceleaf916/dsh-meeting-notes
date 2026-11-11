@@ -93,6 +93,8 @@ const state = {
     captureSystemAudio: true,
     captureMicrophone: true,
     chunkSeconds: 25,
+    detectEnabled: true,
+    detectNotify: true,
   },
   storage: { dir: `${HOME}/dsh-meetings`, exists: true, writable: true },
   provider: {
@@ -159,6 +161,26 @@ const state = {
     systemLevel: 0.42,
   },
   meetings,
+  detect: {
+    enabled: true,
+    available: true,
+    running: true,
+    inMeeting: true,
+    app: 'tencent-meeting',
+    appName: '腾讯会议',
+    since: '2026-11-11T11:05:00.000Z',
+    error: '',
+    cooldownUntil: '',
+    suggestion: {
+      id: 'detect-preview-1',
+      kind: 'start',
+      app: 'tencent-meeting',
+      appName: '腾讯会议',
+      title: '腾讯会议 · 版本收敛方案讨论',
+      createdAt: '2026-11-11T11:05:00.000Z',
+      expiresAt: '2026-11-11T11:07:00.000Z',
+    },
+  },
   capabilities: { recorderBuilt: true, canRecord: true },
 };
 
@@ -223,6 +245,9 @@ globalThis.fetch = async (input) => {
   const json = (value) =>
     new Response(JSON.stringify(value), { status: 200, headers: { 'content-type': 'application/json' } });
   if (url.includes('/recordings/events')) {
+    return new Response(new ReadableStream({ start() {} }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+  }
+  if (url.includes('/detect/events')) {
     return new Response(new ReadableStream({ start() {} }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
   }
   if (url.endsWith('/dsh-meeting-notes/state')) return json(state);
