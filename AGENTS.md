@@ -70,3 +70,30 @@ cd test && node preview.mjs /tmp/mn-preview
 - **z**：仅 bug 修复。
 
 升版本必须四处同步：`package.json`、`package-lock.json`（version 与 `packages[""].version`）、`README.md` 的「当前版本」、`CHANGELOG.md` 顶部条目（标题与 package.json 一致）。
+
+## 6. 发布（npm 与 GitHub Actions）
+
+发布链路唯一入口是仓库根目录的 `publish.sh`，幂等可重复跑：
+
+```bash
+./publish.sh --dry-run   # 演练：自检 + 冒烟测试 + 打包预检，不写 registry
+./publish.sh             # 正式发布（未登录会就地引导 npm login）
+```
+
+- 本机 npm 账号是 `auth-and-writes` 二级验证，人工发布必须有一个真实终端：npm 会打开浏览器让你授权（stdout 接到管道会让 npm 立刻以 `EOTP` 退出），所以脚本只在交互终端里把 stdio 原样交给 `npm publish`。`NPM_OTP=<验证码> ./publish.sh` 用于账号换成验证器 App 的情况；CI 不走这条路，用 npm 可信发布（OIDC）。
+- 脚本按顺序检查：包名不能还在 `@local/`、不能带 `private: true`；`files` 里必需文件是否都进了 tarball（`qwen3.js` / `qwen3-worker.js` 漏过一次，装包后顶层 `import` 直接崩）；`client.js` 的模块 `id` 与 `cordis.patch.yml` 的 `name` 是否等于包名；`node --check` + `test/smoke.mjs`；README「当前版本」与 CHANGELOG 条目是否等于 `package.json` 的 version（四处同步见 §5）；该版本是否已被 registry 占用（npm 版本不可覆盖；`--dry-run` 只告警，让 CI 在发版后仍能做打包预检）；工作区是否有未提交改动。
+- **发布是否成功，以 `npm publish` 的退出码为准。** 脚本发布成功后用 `npm view` 尽力校验最多 60 秒：查到打印 `✓ registry 已可见` 与 `dist.tarball`；查不到只打印告警并继续 exit 0（registry 传播 / CDN / 镜像缓存都可能延迟；v0.3.0 曾因传播晚 30 秒误报，v0.4.0 遇到本地 `registry.npmmirror.com` 缓存读不到）。不要把这一步改回硬失败。
+- 首次发布（本仓库的 v0.2.0）是人工跑的：新包在 registry 里会先建一个 `0.0.0-stage` 占位版本，正式版本随后才出现。可信发布要求包已存在，所以之后新增仓库或包名时，第一次发布仍需在真实终端里人工跑一次。
+- 发一个版本：
+
+```bash
+npm version patch --no-git-tag-version   # 或手改四处版本号
+# 补 CHANGELOG 顶部条目与 README「当前版本」
+git commit -am "chore: release v0.2.2"
+TAG=$(node -p "require('./package.json').version")
+git tag "v$TAG" && git push origin main && git push origin "v$TAG"
+```
+
+- `.github/workflows/ci.yml`：push `main` 或开 PR 时跑语法检查、三个测试与 `./publish.sh --ci --dry-run --skip-tests`，确认打出来的包与本地一致。
+- `.github/workflows/release.yml`：推 `v*` tag 即发布。先校验 tag 必须等于 `v<package.json version>`、tag 指向的提交必须在 `origin/main` 上，再跑测试并 `./publish.sh --ci --provenance --skip-tests`；该版本已被占用时脚本会自己拦下。
+- 认证走 npm 可信发布（OIDC），仓库不存任何密钥：包设置里已登记 `type: github` / repo `iceleaf916/dsh-meeting-notes` / workflow `release.yml`（`npm trust list @iceleaf/dsh-meeting-notes` 可核对），CI 用 `id-token: write` 换一次性发布凭据并签名 provenance。
