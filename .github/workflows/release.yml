@@ -2,11 +2,11 @@ name: Release
 
 # 打 tag（v*）即发布；也可以在 Actions 页面手动指定一个已存在的 tag 重跑。
 #
-# 认证二选一：
-#   1) 仓库 secret NPM_TOKEN（Granular / Automation token，publish 权限 + bypass 2FA）
-#   2) 不配 token，改用 npm 可信发布（OIDC）：npmjs.com → 包设置 → Trusted publishing
-#      填 GitHub 用户名 iceleaf916 / 仓库 dsh-meeting-notes / 工作流文件名 release.yml
-#      （环境名留空）。可信发布要求包已存在于 npm，所以首次发布必须走方式 1。
+# 认证：npm 可信发布（OIDC），仓库不存任何密钥。
+#   包设置里已登记 type=github / repo=iceleaf916/dsh-meeting-notes / file=release.yml
+#   （`npm trust list @iceleaf/dsh-meeting-notes` 可核对），CI 用 id-token: write
+#   换一次性发布凭据并签名 provenance。可信发布要求包已存在，所以首次发布是在
+#   真实终端里人工跑 ./publish.sh 完成的；此后一律走本工作流。
 
 on:
   push:
@@ -67,15 +67,5 @@ jobs:
           node test/models.mjs
           node test/qwen3.mjs
 
-      - name: 发布到 npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
-            echo "认证方式：NPM_TOKEN"
-            printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > "$HOME/.npmrc"
-          else
-            echo "认证方式：OIDC 可信发布（无需 token）"
-          fi
-          ./publish.sh --ci --provenance --skip-tests
+      - name: 发布到 npm（可信发布 / OIDC）
+        run: ./publish.sh --ci --provenance --skip-tests

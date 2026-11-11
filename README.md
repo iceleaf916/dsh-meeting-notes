@@ -2,7 +2,7 @@
 
 一个 DSH Web 插件：左侧栏「会议记录」入口，把「系统声音 + 麦克风」混音录下来，用本地语音识别模型（默认 SenseVoiceSmall，也可切换本插件自带的 Qwen3-ASR）转成中文文稿（可夹少量英文），需要时一键把转写交给 DSH 大模型整理成会议纪要，并在左侧工作区生成一条可继续聊天的会话记录。
 
-当前版本：**v0.2.0**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
+当前版本：**v0.2.1**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
 
 ## 功能
 
@@ -148,7 +148,9 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 ./publish.sh             # 正式发布（未登录会就地引导 npm login）
 ```
 
-本机 npm 账号是 `auth-and-writes` 二级验证，发布时必须有一个真实终端：npm 会打开浏览器让你授权（把 stdout 接到管道会让 npm 立刻以 `EOTP` 退出），所以脚本只在交互终端里把 stdio 原样交给 `npm publish`；CI 这类非交互场景用 `NPM_OTP=<验证码> ./publish.sh`（账号改用验证器 App 时）或直接用别的凭据。
+本机 npm 账号是 `auth-and-writes` 二级验证，人工发布必须有一个真实终端：npm 会打开浏览器让你授权（把 stdout 接到管道会让 npm 立刻以 `EOTP` 退出），所以脚本只在交互终端里把 stdio 原样交给 `npm publish`。CI 不走这条路——发布用 npm 可信发布（OIDC），见下一节。`NPM_OTP=<验证码> ./publish.sh` 仍可用于账号换成验证器 App 的情况。
+
+首次发布（本仓库的 v0.2.0）就是人工跑的：新包在 registry 里会先建一个 `0.0.0-stage` 占位版本，正式版本随后才出现，所以脚本发布后会轮询 `npm view` 最多 90 秒再判定。
 
 它按顺序检查：包名不能还在 `@local/`、不能带 `private: true`；`files` 里必需文件是否都进了 tarball（`qwen3.js` / `qwen3-worker.js` 漏过一次，装包后顶层 `import` 直接崩）；`client.js` 的模块 `id` 与 `cordis.patch.yml` 的 `name` 是否等于包名；`node --check` + `test/smoke.mjs`；README「当前版本」与 CHANGELOG 条目是否等于 `package.json` 的 version；该版本是否已被 registry 占用（npm 版本不可覆盖）；工作区是否有未提交改动。发布成功后自动 `npm view` 校验，并打印安装、profile 切换与打 tag 的后续命令。
 
@@ -158,14 +160,15 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 
 - `.github/workflows/ci.yml`：push `main` 或开 PR 时跑语法检查、三个测试与 `./publish.sh --ci --dry-run --skip-tests`，确认打出来的包与本地一致。
 - `.github/workflows/release.yml`：推 `v*` tag 即发布。先校验 tag 必须等于 `v<package.json version>`、tag 指向的提交必须在 `origin/main` 上，再跑测试并 `./publish.sh --ci --provenance --skip-tests`；该版本已被占用时脚本会自己拦下。
-- 认证两种：仓库 secret `NPM_TOKEN`（首次发布必须用它——npm 要求包已存在才能配可信发布），或发布过一次后在 npmjs.com → 包设置 → Trusted publishing 填 `iceleaf916` / `dsh-meeting-notes` / `release.yml`（环境名留空），之后 CI 走 OIDC，不再需要 token。
+- 认证走 npm 可信发布（OIDC），仓库不存任何密钥：包设置里已登记 `type: github` / repo `iceleaf916/dsh-meeting-notes` / workflow `release.yml`（`npm trust list @iceleaf/dsh-meeting-notes` 可核对），CI 用 `id-token: write` 换一次性发布凭据并签名 provenance。可信发布要求包已存在，所以之后新增仓库或包名时，第一次发布仍需在真实终端里人工跑一次。
 - 发一个版本：
 
 ```bash
 npm version patch --no-git-tag-version   # 或手改四处版本号
 # 补 CHANGELOG 顶部条目与 README「当前版本」
-git commit -am "chore: release v0.2.1"
-git tag v0.2.1 && git push origin main --follow-tags
+git commit -am "chore: release v0.2.2"
+TAG=$(node -p "require('./package.json').version")
+git tag "v$TAG" && git push origin main && git push origin "v$TAG"
 ```
 
 ## 许可

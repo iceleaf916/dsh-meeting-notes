@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.1
+
+发布链路改用 npm 可信发布（OIDC），CI 打 tag 即自动发版，仓库不存密钥。
+
+- `.github/workflows/release.yml` 去掉 `NPM_TOKEN` 分支：发布步骤只跑 `./publish.sh --ci --provenance --skip-tests`，用 `id-token: write` 换 npm 一次性发布凭据并签名 provenance；npm 侧登记了可信发布（`iceleaf916/dsh-meeting-notes` + `release.yml`，`npm trust list` 可核对）。
+- `publish.sh` 的 registry 校验改为最多 90 秒轮询，区分「版本还在同步」和「staged 发布待维护者放行」，并把 2FA 失败的提示改成指向可信发布（账号为 `auth-and-writes` 时，未勾选 Bypass 2FA 的 granular token 发布必被 `EOTP` 拦下）。
+- 文档：README 的发布段落改成「首次人工、之后 tag 自动」，说明新包先出现 `0.0.0-stage` 占位版本的现象。
+
 ## v0.2.0
 
 界面按 DSH 设计系统重做，交互改回常规形态。

@@ -179,17 +179,25 @@ if [ "$rc" -ne 0 ]; then
   cat <<EOF
   排查方向：
     - 未登录：npm login --registry=$REG
-    - 需要 2FA：在终端里直接跑 ./publish.sh（交互 TTY 才能走浏览器认证 / 验证码）；
-      非交互场景用 NPM_OTP=123456 ./publish.sh，或 npm config set auth-type legacy
+    - 需要 2FA：非交互场景改用 npm 可信发布（OIDC，workflow 需要 id-token: write），
+      或在真实终端里跑 ./publish.sh 走浏览器授权；账号为 auth-and-writes 时，
+      未勾选「Bypass 2FA」的 granular token 发布必被 EOTP 拦下
     - 权限：确认你的 npm 账号对 $PKG 有 publish 权限
 EOF
   exit 3
 fi
 
 # ---- 10. 校验与后续步骤 ----------------------------------------------------
-say "校验 registry"
-npm view "$PKG@$VER" version dist.tarball --registry="$REG" \
-  || die '发布命令成功了但 registry 查不到，可能仍在同步，稍后手工确认'
+say "校验 registry（新包 / 首次发布会先建 0.0.0-stage 占位，最多等 90 秒）"
+VERIFY_RC=1
+for _i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
+  if npm view "$PKG@$VER" version --registry="$REG" >/dev/null 2>&1; then VERIFY_RC=0; break; fi
+  sleep 5
+done
+if [ "$VERIFY_RC" -ne 0 ]; then
+  die "发布命令返回成功，但 90 秒内 registry 查不到 $VER：若是 staged 发布，需要维护者在 npmjs.com 放行；否则先看 https://www.npmjs.com/package/$PKG 再决定是否重发"
+fi
+npm view "$PKG@$VER" version dist.tarball --registry="$REG"
 
 printf '\n\033[32m✓ 发布完成\033[0m\n    https://www.npmjs.com/package/%s/v/%s\n' "$PKG" "$VER"
 cat <<EOF
