@@ -61,7 +61,8 @@ PACK_JSON=$(npm pack --dry-run --json 2>/dev/null) \
   || die 'npm pack --dry-run 失败，先单独跑一次看报错'
 LIST=$(printf '%s' "$PACK_JSON" | node -e \
   "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{process.stdout.write(JSON.parse(s)[0].files.map(f=>f.path).join('\n'))})")
-for f in index.js client.js storage.js capture.js asr.js minutes.js qwen3.js qwen3-worker.js \
+for f in index.js client.js storage.js capture.js asr.js minutes.js qwen3.js sensevoice.js \
+         model-runtime.js wav.js asr-worker.js asr-registry.js \
          cordis.patch.yml package.json README.md LICENSE locale/zh.json locale/en.json; do
   printf '%s\n' "$LIST" | grep -qx "$f" || die "打包缺文件：$f（检查 package.json 的 files 数组）"
 done
@@ -76,7 +77,8 @@ ok "client.js 模块 id 与 cordis.patch.yml name 都对齐 $PKG"
 
 # ---- 3. 语法与测试 --------------------------------------------------------
 say "语法检查"
-for f in index.js client.js storage.js capture.js asr.js minutes.js qwen3.js qwen3-worker.js; do
+for f in index.js client.js storage.js capture.js asr.js minutes.js qwen3.js sensevoice.js \
+         model-runtime.js wav.js asr-worker.js asr-registry.js; do
   node --check "$f" || die "语法错误：$f"
 done
 ok 'node --check 全部通过'

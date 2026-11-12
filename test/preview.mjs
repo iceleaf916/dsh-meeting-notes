@@ -109,6 +109,7 @@ const state = {
   models: [
     {
       id: 'sensevoice-local',
+      source: 'plugin',
       name: 'SenseVoiceSmall (INT8)',
       location: 'host-local',
       languages: ['auto', 'zh', 'en', 'yue', 'ja', 'ko'],
@@ -122,6 +123,7 @@ const state = {
     },
     {
       id: 'whisper-local',
+      source: 'dsh',
       name: 'Whisper Small (INT8)',
       location: 'host-local',
       languages: ['auto', 'zh', 'en'],
@@ -135,6 +137,7 @@ const state = {
     },
     {
       id: 'qwen3-asr-0.6b',
+      source: 'plugin',
       name: 'Qwen3-ASR-0.6B (INT8)',
       location: 'host-local',
       languages: ['auto', 'zh', 'en', 'yue', 'ja', 'ko'],

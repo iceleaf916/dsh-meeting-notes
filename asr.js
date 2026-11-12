@@ -1,6 +1,6 @@
 /**
- * 转写层：复用 DSH 内置的本地语音识别服务（ctx.speechToText，SenseVoiceSmall
- * INT8 + Silero VAD），本插件只负责：
+ * 转写层：面向 asr-registry.js 门面（插件自带 SenseVoice / Qwen3-ASR，DSH 语音
+ * 服务存在时作为额外来源合并），本插件只负责：
  *   - 找到可用的本地 provider 并触发模型准备；
  *   - 把裸 PCM 按静音点切成合适长度的 WAV 片段；
  *   - 串行调用 transcribe，返回带时间偏移的文本段。
@@ -11,10 +11,6 @@ import { BYTES_PER_SECOND, SAMPLE_RATE, pcmLevel, wavHeader } from './storage.js
 const FRAME_BYTES = 640; // 20ms / 16kHz / s16le mono
 const FRAMES_PER_SECOND = 50;
 const SILENCE_RMS = 0.012;
-
-export function speechService(ctx) {
-  return ctx.get('speechToText');
-}
 
 /** 选出可用的本地 provider：配置的 id 优先，其次任何 sensevoice，最后第一个本地 provider。 */
 export function pickProvider(service, preferredId) {

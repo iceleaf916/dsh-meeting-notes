@@ -1,5 +1,6 @@
-// Qwen3-ASR 推理 worker：模型加载和同步解码都放在这里，
-// 这样主进程（DSH）不会因为几秒钟的 CPU 推理而卡住 UI / HTTP 接口。
+// 通用 ASR 推理 worker：sherpa-onnx 的 recognizer 构建与同步解码都放在这里，
+// 主进程（DSH）不会因为几秒钟的 CPU 推理而卡住 UI / HTTP 接口。
+// SenseVoice 与 Qwen3-ASR 共用同一套消息协议，差异只在 load 时收到的 config。
 import { parentPort } from 'node:worker_threads';
 import sherpa from 'sherpa-onnx-node';
 

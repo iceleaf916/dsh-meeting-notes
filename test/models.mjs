@@ -27,6 +27,7 @@ process.env.IS_REACT_ACT_ENVIRONMENT = 'true';
 
 const sensevoice = {
   id: 'sensevoice-local',
+  source: 'plugin',
   name: 'SenseVoiceSmall (INT8)',
   location: 'host-local',
   languages: ['auto', 'zh', 'en'],
@@ -46,6 +47,7 @@ const sensevoice = {
 
 const whisper = {
   id: 'whisper-local',
+  source: 'dsh',
   name: 'Whisper Small (INT8)',
   location: 'host-local',
   languages: ['auto', 'zh', 'en'],
@@ -254,6 +256,8 @@ const rowButton = (id, label) => {
 ok(!!panel(), '设置弹窗打开');
 ok((panel()?.textContent || '').includes('识别模型'), '设置页出现「识别模型」分组');
 ok(!!row('sensevoice-local') && !!row('whisper-local'), '模型列表渲染两个模型（列表形式可扩展）');
+ok((row('sensevoice-local')?.textContent || '').includes('插件自带'), '自带引擎标注「插件自带」来源');
+ok((row('whisper-local')?.textContent || '').includes('DSH 语音插件'), 'DSH provider 标注「DSH 语音插件」来源');
 ok((row('sensevoice-local')?.textContent || '').includes('当前使用'), '当前模型标注「当前使用」');
 ok((row('whisper-local')?.textContent || '').includes('下载并准备'), '未准备的模型显示「下载并准备」');
 ok((row('whisper-local')?.textContent || '').includes('硬盘占用约 0.5 GB'), '未准备模型显示磁盘估算');

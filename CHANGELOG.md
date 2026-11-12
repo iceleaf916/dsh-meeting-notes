@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.5.0
+
+识别引擎改由插件自带，不再依赖 DSH 语音输入插件。
+
+- 修复：停用 DSH 语音输入插件后设置页模型列表为空、录音与转写直接报「语音识别服务未启用」的问题。模型列表与推理不再以 `ctx.speechToText` 为唯一来源，DSH 里的可选语音插件只作为额外来源。
+- 新增 `asr-registry.js` 门面：把插件自带的 SenseVoiceSmall 与 Qwen3-ASR 两个 provider 合并成与 DSH 语音服务同形状的接口（列表 / 快照 / 准备 / 取消 / 解析 / 转写），每行标注来源「插件自带」或「DSH 语音插件」；DSH 服务存在时把同一个 Qwen3 实例注册进去共享，不存在时全部走自带实现。
+- 新增自带 SenseVoice provider（`sensevoice.js` + `asr-worker.js`）：默认复用 DSH 语音插件已下载的模型目录 `~/.dsh/speech-to-text/sensevoice/models/sensevoice-onnx`（可用 `sensevoiceModelDir` 覆盖）避免重复下载；模型文件锁定上游 commit 与 sha256；language 固定 `auto` 并开启 ITN，支持实时转写。
+- 抽出 `model-runtime.js`（多源下载、sha256 校验、准备状态机、worker 空闲释放、失败占位）与 `wav.js`，Qwen3-ASR 改用同一运行时；原 `qwen3-worker.js` 更名为 `asr-worker.js` 供两个引擎共用。
+- 初始化失败不再静默：某个引擎启动失败时仍以 `phase: 'failed'` 的模型行显示原因，另一引擎照常可用；`/state.models` 恒非空，`speechAvailable` 保留「DSH 语音服务是否存在」的语义。
+- 客户端：模型行新增来源标签；空列表文案改为提示插件自带引擎初始化失败，不再要求开启 DSH 语音插件；中文 / 英文文案同步。
+- 测试：新增 `test/registry.mjs`（12 项门面路由与合并回退）与 `test/sensevoice.mjs`（5 项元数据与资源锁）；`test/models.mjs`、`test/preview.mjs` 增加来源标签断言；真机用真实模型目录验证两个引擎均能 prepare + transcribe（20 秒音频 SenseVoice 约 0.46 秒、Qwen3-ASR 约 2.66 秒）。
+
 ## v0.4.0
 
 会议提醒支持企业微信内置会议。
