@@ -142,7 +142,7 @@ export class DetectionStateMachine {
  *   notifyRecordingStarted() / notifyRecordingStopped()  手动录音时清掉过时的建议
  *   dispose()            插件卸载时收尾
  *
- * detectorApi 可注入（测试用）；默认在真正启动时才动态加载 detector.js，
+ * detectorApi / platform 可注入（测试用）；默认在真正启动时才动态加载 detector.js，
  * 这样纯状态机/控制器测试不需要先编译 Swift。
  */
 export function createMeetingDetector({
@@ -155,6 +155,7 @@ export function createMeetingDetector({
   getRecordingTitle = () => '',
   log = () => {},
   detectorApi = null,
+  platform = process.platform,
   now = () => Date.now(),
 } = {}) {
   const readConfig = () => (typeof getConfig === 'function' ? getConfig() || {} : {});
@@ -212,7 +213,7 @@ export function createMeetingDetector({
     const enabled = readConfig().detectEnabled !== false;
     return {
       enabled,
-      available: process.platform === 'darwin',
+      available: platform === 'darwin',
       running,
       inMeeting,
       app: inMeeting ? app : '',
@@ -342,7 +343,7 @@ export function createMeetingDetector({
       emit();
       return;
     }
-    if (process.platform !== 'darwin') {
+    if (platform !== 'darwin') {
       error = '当前平台暂不支持会议检测（需要 macOS 14.2+）';
       running = false;
       emit();

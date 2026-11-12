@@ -62,6 +62,9 @@ function makeRuntime({ config = baseConfig(), api = fakeDetectorApi(), recording
     getRecordingTitle: () => state.recordingTitle,
     titleFor: (date) => `腾讯会议 ${date.toISOString().slice(0, 16)}`,
     detectorApi: api,
+    // 控制器测试验证的是建议/去抖逻辑；CI 跑在 Linux 上，这里固定成 macOS，
+    // 否则 start() 会因平台不支持直接返回，测试就测不到控制器行为。
+    platform: 'darwin',
     now: () => clock.now,
   });
   const sample = (active, advance = 0, bundle = 'com.tencent.meeting') => {
