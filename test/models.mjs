@@ -65,6 +65,26 @@ const whisper = {
   canPrepare: true,
 };
 
+const xingchen = {
+  id: 'xingchen-asr',
+  source: 'plugin',
+  name: 'XingChenASR-V3.2-Ultra (SiliconFlow)',
+  location: 'cloud',
+  languages: ['auto', 'zh', 'en', 'yue'],
+  downloadSources: [],
+  setupEstimate: null,
+  maxChunkSeconds: 50,
+  realtime: false,
+  preparation: {
+    phase: 'unprepare',
+    message: '未配置硅基流动 API 密钥：请在「设置 → 识别」中填写后使用云端识别。',
+  },
+  selected: false,
+  ready: false,
+  preparing: false,
+  canPrepare: false,
+};
+
 const state = {
   ok: true,
   platform: { supported: true, name: 'macOS (arm64)', reason: '' },
@@ -73,13 +93,14 @@ const state = {
     transcribeMode: 'after',
     language: 'zh',
     providerId: 'sensevoice-local',
+    siliconflowApiKey: '',
     captureSystemAudio: true,
     captureMicrophone: true,
     chunkSeconds: 25,
   },
   storage: { dir: `${HOME}/dsh-meetings`, exists: true, writable: true },
   speechAvailable: true,
-  models: [sensevoice, whisper],
+  models: [sensevoice, whisper, xingchen],
   provider: {
     id: sensevoice.id,
     name: sensevoice.name,
@@ -262,6 +283,18 @@ ok((row('sensevoice-local')?.textContent || '').includes('当前使用'), '当�
 ok((row('whisper-local')?.textContent || '').includes('下载并准备'), '未准备的模型显示「下载并准备」');
 ok((row('whisper-local')?.textContent || '').includes('硬盘占用约 0.5 GB'), '未准备模型显示磁盘估算');
 
+// 云端模型：标注来源、没有下载动作、未配置密钥与「不建议实时转写」都写进描述
+ok((row('xingchen-asr')?.textContent || '').includes('硅基流动云端'), '云端模型标注「硅基流动云端」');
+ok(!rowButton('xingchen-asr', '下载并准备'), '云端模型不显示「下载并准备」');
+ok((row('xingchen-asr')?.textContent || '').includes('未配置硅基流动 API 密钥'), '云端模型提示未配置密钥');
+ok((row('xingchen-asr')?.textContent || '').includes('不建议开启实时转写'), '云端模型说明不建议实时转写');
+
+// 识别分组里的密钥输入框：密码形态、说明提到环境变量回退
+const keyInput = panel().querySelector('#mn-cfg-siliconflow-key');
+ok(!!keyInput, '设置页有硅基流动 API 密钥输入框');
+ok(keyInput?.getAttribute('type') === 'password', '密钥输入框以密码形式展示');
+ok((panel()?.textContent || '').includes('SILICONFLOW_API_KEY'), '密钥说明提到环境变量回退');
+
 // 1) 切换模型：POST /config 带 providerId
 const useBtn = rowButton('whisper-local', '使用该模型');
 ok(!!useBtn, '未选中的模型有「使用该模型」按钮');
@@ -304,6 +337,25 @@ if (prepareBtn) {
   } else {
     fail('下载中没有找到「取消准备」按钮');
   }
+}
+
+// 4) 保存配置：POST /config 里带上密钥字段（留空表示回退环境变量）
+const saveBtn = [...(panel()?.querySelectorAll('button') || [])].find((el) =>
+  (el.textContent || '').includes('保存配置'),
+);
+ok(!!saveBtn, '设置页有「保存配置」按钮');
+if (saveBtn) {
+  await act(async () => {
+    saveBtn.click();
+    await new Promise((r) => setTimeout(r, 120));
+  });
+  const saveCall = calls
+    .filter((call) => call.method === 'POST' && call.url.endsWith('/dsh-meeting-notes/config'))
+    .at(-1);
+  ok(
+    !!saveCall && Object.prototype.hasOwnProperty.call(saveCall.body, 'siliconflowApiKey'),
+    '保存 POST /config 带 siliconflowApiKey 字段',
+  );
 }
 
 console.log(process.exitCode ? 'MODELS FAILED' : 'MODELS OK');

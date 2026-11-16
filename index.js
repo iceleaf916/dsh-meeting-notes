@@ -3,7 +3,7 @@
  *
  * 职责：
  *   - 用 Swift 辅助程序（recorder/）采集「系统音频 + 麦克风」并混音成 16k mono PCM；
- *   - 自带的 SenseVoiceSmall / Qwen3-ASR 本地引擎做转写（实时 / 录后两种模式），
+ *   - 自带的 SenseVoiceSmall / Qwen3-ASR 本地引擎与硅基流动云端引擎做转写（实时 / 录后两种模式），
  *     不依赖任何 DSH 可选插件；DSH 语音服务存在时只作为额外来源合并；
  *   - 会议音频与文稿落在 storageDir（默认 ~/dsh-meetings）；
  *   - 点「生成会议纪要」时，把会议目录注册成 DSH 工作区并建一条会话，让模型写 minutes.md，
@@ -48,6 +48,7 @@ import {
 import { createMinutesRecord } from './minutes.js';
 import { QWEN3_PROVIDER_ID, QWEN3_PROVIDER_INFO, createQwen3Provider } from './qwen3.js';
 import { SENSEVOICE_PROVIDER_INFO, createSenseVoiceProvider } from './sensevoice.js';
+import { XINGCHEN_PROVIDER_INFO, createXingchenProvider } from './xingchen.js';
 import { createAsrRegistry } from './asr-registry.js';
 
 export const inject = ['webServer'];
@@ -199,10 +200,10 @@ export function apply(ctx, config = {}) {
     };
   }
 
-  // ---- 识别引擎：插件自带 SenseVoice + Qwen3，DSH 语音服务只做可选合并 ----
-  // 这两个 provider 的生命周期由插件自己持有：DSH 没有启用语音插件时，模型列表
+  // ---- 识别引擎：插件自带 SenseVoice + Qwen3 + 硅基流动云端，DSH 语音服务只做可选合并 ----
+  // 这些 provider 的生命周期由插件自己持有：DSH 没有启用语音插件时，模型列表
   // 仍然由它们提供；DSH 启用了，只是把它的 provider 合并进列表，并把 Qwen3 反向
-  // 注册过去供 DSH 的语音输入使用。
+  // 注册过去供 DSH 的语音输入使用。云端 provider 没有下载步骤，密钥每次现读配置。
   const asrFailures = [];
   const createOwnProvider = (label, factory, info) => {
     try {
@@ -236,8 +237,16 @@ export function apply(ctx, config = {}) {
       }),
     QWEN3_PROVIDER_INFO,
   );
+  const xingchen = createOwnProvider(
+    'XingChenASR',
+    () =>
+      createXingchenProvider({
+        getApiKey: () => currentConfig.siliconflowApiKey,
+      }),
+    XINGCHEN_PROVIDER_INFO,
+  );
   const asr = createAsrRegistry({
-    providers: [sensevoice, qwen3].filter(Boolean),
+    providers: [sensevoice, qwen3, xingchen].filter(Boolean),
     failures: asrFailures,
     dsh: () => ctx.get('speechToText'),
   });
@@ -297,7 +306,7 @@ export function apply(ctx, config = {}) {
     return markdown;
   }
 
-  // ---- 本地模型准备 ----
+  // ---- 识别模型准备（本地下载 / 云端密钥检查） ----
   async function waitProviderReady(service, providerId) {
     prepareProvider(service, providerId);
     const startedAt = Date.now();
@@ -305,10 +314,10 @@ export function apply(ctx, config = {}) {
       const view = providerView(service, providerId);
       if (isProviderReady(view)) return view;
       if (view && view.preparation && view.preparation.phase === 'failed') {
-        throw new Error(`本地识别模型准备失败：${view.preparation.message || '未知原因'}`);
+        throw new Error(`识别模型准备失败：${view.preparation.message || '未知原因'}`);
       }
       if (Date.now() - startedAt > PROVIDER_TIMEOUT_MS) {
-        throw new Error('本地识别模型准备超时，请稍后重试');
+        throw new Error('识别模型准备超时，请稍后重试');
       }
       await new Promise((resolve) => setTimeout(resolve, 600));
     }
@@ -331,7 +340,7 @@ export function apply(ctx, config = {}) {
 
       const service = asr;
       const provider = pickProvider(service, config.providerId);
-      if (!provider) throw new Error('没有可用的本地语音识别引擎，请到「设置 → 识别模型」检查模型状态');
+      if (!provider) throw new Error('没有可用的语音识别引擎，请到「设置 → 识别模型」检查模型状态');
       await waitProviderReady(service, provider.id);
 
       const pcm = await readWavPcm(path.join(dir, 'audio.wav'));
@@ -390,17 +399,21 @@ export function apply(ctx, config = {}) {
     const config = currentConfig;
     const service = asr;
     const provider = pickProvider(service, config.providerId);
-    if (!provider) throw new HttpError(400, '没有可用的本地语音识别引擎，请到「设置 → 识别模型」检查模型状态');
+    if (!provider) throw new HttpError(400, '没有可用的语音识别引擎，请到「设置 → 识别模型」检查模型状态');
     const view = providerView(service, provider.id);
     if (view?.preparation?.phase === 'failed') {
-      throw new HttpError(400, `本地识别模型准备失败：${view.preparation.message || '未知原因'}`);
+      throw new HttpError(400, `识别模型准备失败：${view.preparation.message || '未知原因'}`);
     }
     if (!view || !isProviderReady(view)) {
       if (mode === 'realtime') {
-        throw new HttpError(400, '实时转写需要本地模型先就绪，请到「设置 → 识别模型」下载并准备好模型');
+        throw new HttpError(400, '实时转写需要识别模型先就绪，请到「设置 → 识别模型」检查模型状态');
       }
       // 录后转写：录音期间在后台把模型准备好，停止时就不必再等下载。
-      prepareProvider(service, provider.id);
+      try {
+        prepareProvider(service, provider.id);
+      } catch (error) {
+        throw new HttpError(400, error instanceof Error ? error.message : String(error));
+      }
     }
 
     await ensureRecorder();
@@ -632,9 +645,18 @@ export function apply(ctx, config = {}) {
   async function saveConfig(patch) {
     const next = normalizeConfig({ ...currentConfig, ...patch }, currentConfig);
     // 模型选择必须指向合并后真实存在的 provider，避免把配置写成不存在的 id。
-    if (patch.providerId) {
-      if (!findProvider(asr, next.providerId)) {
+    if (patch.providerId || patch.language) {
+      const provider = findProvider(asr, next.providerId);
+      if (!provider) {
         throw new HttpError(400, `没有可用的语音识别模型（${next.providerId}）`);
+      }
+      // 不同模型支持的语言不同（云端模型只有中/英/方言），换模型或换语言时都要校验。
+      const languages = Array.isArray(provider.languages) ? provider.languages : [];
+      if (languages.length && !languages.includes(next.language)) {
+        throw new HttpError(
+          400,
+          `「${provider.name || provider.id}」不支持识别语言「${next.language}」，请更换语言或模型`,
+        );
       }
     }
     const editor = configEditor();
@@ -646,6 +668,7 @@ export function apply(ctx, config = {}) {
       transcribeMode: next.transcribeMode,
       language: next.language,
       providerId: next.providerId,
+      siliconflowApiKey: next.siliconflowApiKey,
       captureSystemAudio: next.captureSystemAudio,
       captureMicrophone: next.captureMicrophone,
       chunkSeconds: next.chunkSeconds,
@@ -666,6 +689,7 @@ export function apply(ctx, config = {}) {
     'transcribeMode',
     'language',
     'providerId',
+    'siliconflowApiKey',
     'captureSystemAudio',
     'captureMicrophone',
     'chunkSeconds',

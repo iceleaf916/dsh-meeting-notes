@@ -11,7 +11,7 @@ window.__ModuleLoader__.load({
     const DICT_ZH = {
       nav: '会议记录',
       title: '会议记录',
-      subtitle: '系统声音与麦克风混音录制 · 本地离线转写',
+      subtitle: '系统声音与麦克风混音录制 · 本地 / 云端转写',
       refresh: '刷新',
       refreshing: '同步中',
       loading: '加载中…',
@@ -49,6 +49,10 @@ window.__ModuleLoader__.load({
       captureSystem: '系统声音',
       chunkSeconds: '分块秒数',
       chunkHint: '实时转写每次识别的音频长度（秒）。',
+      siliconflowApiKey: '硅基流动 API 密钥',
+      siliconflowApiKeyHint:
+        '用于云端模型 XingChenASR-V3.2-Ultra。密钥只保存在插件配置里；识别时音频会上传到硅基流动服务器。密钥留空时也可用环境变量 SILICONFLOW_API_KEY。',
+      siliconflowApiKeyPlaceholder: 'sk-…',
       langAuto: '自动识别',
       langZh: '中文',
       langEn: '英语',
@@ -145,11 +149,12 @@ window.__ModuleLoader__.load({
       modeHintAfter: '结束后转写：停止录音后整段识别，速度更快。',
       modeHintRealtime: '实时转写：录音时持续显示字幕，占用略高。',
       unsavedHint: '有未保存的修改',
-      modelSectionNote: '需先下载到本机才能离线转写',
+      modelSectionNote: '本地模型需先下载；云端模型填好密钥即可使用',
       modelEmpty: '识别引擎初始化失败：插件自带的 SenseVoice / Qwen3-ASR 都没能启动，请查看 DSH 日志。',
-      modelsHint: '识别模型由插件自带（SenseVoice / Qwen3-ASR）；启用 DSH 语音输入插件后，它的模型也会合并到这里。',
+      modelsHint: '识别模型包含插件自带（SenseVoice / Qwen3-ASR）与硅基流动云端模型；启用 DSH 语音输入插件后，它的模型也会合并到这里。',
       modelSourcePlugin: '插件自带',
       modelSourceDsh: 'DSH 语音插件',
+      modelSourceCloud: '硅基流动云端',
       modelCurrent: '当前使用',
       useModel: '使用该模型',
       modelSelected: '已切换识别模型',
@@ -159,8 +164,8 @@ window.__ModuleLoader__.load({
       modelCancelled: '已取消模型准备',
       modelPreparing: '正在准备模型，进度见上方状态。',
       modelSteps: '准备步骤',
-      modelNotReady: '实时转写需要先准备好本地模型。',
-      modelNotReadySettings: '去设置准备',
+      modelNotReady: '实时转写需要先准备好识别模型。',
+      modelNotReadySettings: '去设置检查',
       stepCheck: '检查本地资源',
       stepModel: '准备语音识别模型',
       stepVad: '准备语音检测模型',
@@ -180,8 +185,8 @@ window.__ModuleLoader__.load({
       sourceHuggingFace: 'Hugging Face',
       sourceMirror: 'HF-Mirror（国内镜像）',
       sourceModelscope: 'ModelScope（国内推荐）',
-      modelRealtimeHint: '该模型实时转写延迟较高，建议使用「结束后转写」。',
-      modelRealtimeWarn: '当前模型实时转写延迟较高，录音不受影响，建议会后转写。',
+      modelRealtimeHint: '该模型实时转写延迟较高，不建议开启实时转写，建议使用「结束后转写」。',
+      modelRealtimeWarn: '当前模型实时转写延迟较高，不建议开启实时转写；录音不受影响，建议会后转写。',
       sourceAutoHelp: '优先使用响应较快的源，下载失败时自动尝试其他源。',
       sourceManualHelp: '仅从所选源下载；已下载并通过校验的文件会复用。',
       estimateDisk: '硬盘占用约 {gb} GB',
@@ -235,7 +240,7 @@ window.__ModuleLoader__.load({
     const DICT_EN = {
       nav: 'Meeting Notes',
       title: 'Meeting Notes',
-      subtitle: 'Record system audio and microphone · transcribe locally',
+      subtitle: 'Record system audio and microphone · local or cloud transcription',
       refresh: 'Refresh',
       refreshing: 'Syncing',
       loading: 'Loading…',
@@ -273,6 +278,10 @@ window.__ModuleLoader__.load({
       captureSystem: 'System audio',
       chunkSeconds: 'Chunk seconds',
       chunkHint: 'Audio length per realtime transcription step (seconds).',
+      siliconflowApiKey: 'SiliconFlow API key',
+      siliconflowApiKeyHint:
+        'Used by the cloud model XingChenASR-V3.2-Ultra. The key is stored in the plugin config only; audio is uploaded to SiliconFlow for recognition. Leave it empty to use the SILICONFLOW_API_KEY environment variable.',
+      siliconflowApiKeyPlaceholder: 'sk-…',
       langAuto: 'Auto detect',
       langZh: 'Chinese',
       langEn: 'English',
@@ -369,11 +378,12 @@ window.__ModuleLoader__.load({
       modeHintAfter: 'Transcribe after stop: recognize the whole recording once, fastest.',
       modeHintRealtime: 'Realtime: subtitles stream while recording, slightly more CPU.',
       unsavedHint: 'Unsaved changes',
-      modelSectionNote: 'Downloaded locally before offline transcription',
+      modelSectionNote: 'Local models must be downloaded first; cloud models only need an API key',
       modelEmpty: 'Recognition engines failed to start: the bundled SenseVoice / Qwen3-ASR providers are unavailable. Check the DSH logs.',
-      modelsHint: 'Models are bundled with this plugin (SenseVoice / Qwen3-ASR); enabling the DSH voice input plugin merges its models into this list too.',
+      modelsHint: 'Models include the bundled SenseVoice / Qwen3-ASR providers and the SiliconFlow cloud model; enabling the DSH voice input plugin merges its models into this list too.',
       modelSourcePlugin: 'Bundled',
       modelSourceDsh: 'DSH voice plugin',
+      modelSourceCloud: 'SiliconFlow cloud',
       modelCurrent: 'In use',
       useModel: 'Use this model',
       modelSelected: 'Recognition model switched',
@@ -383,8 +393,8 @@ window.__ModuleLoader__.load({
       modelCancelled: 'Model preparation cancelled',
       modelPreparing: 'Preparing the model; watch the status above.',
       modelSteps: 'Preparation steps',
-      modelNotReady: 'Realtime transcription needs a prepared local model.',
-      modelNotReadySettings: 'Prepare in settings',
+      modelNotReady: 'Realtime transcription needs a prepared recognition model.',
+      modelNotReadySettings: 'Check settings',
       stepCheck: 'Check local resources',
       stepModel: 'Prepare speech recognition model',
       stepVad: 'Prepare voice detection model',
@@ -404,8 +414,8 @@ window.__ModuleLoader__.load({
       sourceHuggingFace: 'Hugging Face',
       sourceMirror: 'HF-Mirror (China mirror)',
       sourceModelscope: 'ModelScope (China)',
-      modelRealtimeHint: 'Realtime transcription is slower on this model; prefer transcribing after recording.',
-      modelRealtimeWarn: 'This model is slow for realtime transcription. Recording still works; transcribing after the meeting is faster.',
+      modelRealtimeHint: 'Realtime transcription is slower on this model and is not recommended; prefer transcribing after recording.',
+      modelRealtimeWarn: 'Realtime transcription is not recommended on this model. Recording still works; transcribing after the meeting is faster.',
       sourceAutoHelp: 'Uses the faster source first and falls back to others on failure.',
       sourceManualHelp: 'Downloads only from the selected source; already verified files are reused.',
       estimateDisk: 'About {gb} GB on disk',
@@ -977,6 +987,7 @@ window.__ModuleLoader__.load({
           transcribeMode: config?.transcribeMode === 'realtime' ? 'realtime' : 'after',
           language: String(config?.language || 'zh'),
           providerId: String(config?.providerId || 'sensevoice-local'),
+          siliconflowApiKey: String(config?.siliconflowApiKey || ''),
           captureSystemAudio: config?.captureSystemAudio !== false,
           captureMicrophone: config?.captureMicrophone !== false,
           chunkSeconds: Number(config?.chunkSeconds) || 25,
@@ -1636,6 +1647,7 @@ window.__ModuleLoader__.load({
             'transcribeMode',
             'language',
             'providerId',
+            'siliconflowApiKey',
             'chunkSeconds',
             'captureSystemAudio',
             'captureMicrophone',
@@ -1755,6 +1767,7 @@ window.__ModuleLoader__.load({
               storageDir,
               transcribeMode: draft.transcribeMode,
               language: draft.language,
+              siliconflowApiKey: String(draft.siliconflowApiKey || '').trim(),
               captureSystemAudio: !!draft.captureSystemAudio,
               captureMicrophone: !!draft.captureMicrophone,
               chunkSeconds,
@@ -1851,7 +1864,15 @@ window.__ModuleLoader__.load({
           const id = String(providerId || '');
           const current = store.get().state?.config?.providerId;
           if (!id || id === current) return;
-          const saved = await patchConfig({ providerId: id }, { notice: t('modelSelected') });
+          const model = modelList(store.get().state).find((item) => item.id === id);
+          const draft = store.get().cfgDraft || cfgFrom(store.get().state?.config);
+          const patch = { providerId: id };
+          // 云端模型不支持日语 / 韩语：切换时把语言收敛到它支持的集合，避免保存被服务端拒绝。
+          const languages = Array.isArray(model?.languages) ? model.languages : [];
+          if (languages.length && !languages.includes(draft.language)) {
+            patch.language = languages.includes('auto') ? 'auto' : languages[0];
+          }
+          const saved = await patchConfig(patch, { notice: t('modelSelected') });
           if (saved) void refreshState(true);
         };
 
@@ -3111,15 +3132,16 @@ window.__ModuleLoader__.load({
                   { className: 'mn-model-meta' },
                   h(StatusDot, { tone: phaseTone(phase) }),
                   h('span', null, phaseLabel(phase)),
-                  model.source === 'plugin' || model.source === 'dsh'
-                    ? h(
-                        'span',
-                        { 'data-source': model.source },
-                        `· ${t(model.source === 'dsh' ? 'modelSourceDsh' : 'modelSourcePlugin')}`,
-                      )
-                    : null,
+                  model.location === 'cloud'
+                    ? h('span', { 'data-source': 'cloud' }, `· ${t('modelSourceCloud')}`)
+                    : model.source === 'plugin' || model.source === 'dsh'
+                      ? h(
+                          'span',
+                          { 'data-source': model.source },
+                          `· ${t(model.source === 'dsh' ? 'modelSourceDsh' : 'modelSourcePlugin')}`,
+                        )
+                      : null,
                   runningStep ? h('span', null, `· ${stepLabel(runningStep.kind)}`) : null,
-                  model.location === 'cloud' ? h('span', null, '· cloud') : null,
                 ),
               ),
               !model.selected && !preparing
@@ -3154,6 +3176,10 @@ window.__ModuleLoader__.load({
               : null,
             model.realtime === false
               ? h('p', { className: 'mn-hint', 'data-hint': 'realtime' }, t('modelRealtimeHint'))
+              : null,
+            // 云端模型未填密钥时 phase=unprepare，没有下载步骤，直接说明缺什么。
+            !failed && preparation.message
+              ? h('p', { className: 'mn-hint', 'data-hint': 'preparation' }, preparation.message)
               : null,
             phase === 'downloading'
               ? h(
@@ -3479,6 +3505,31 @@ window.__ModuleLoader__.load({
                   onChange: (event) => editDraft({ chunkSeconds: Number(event.target.value) || 0 }),
                 }),
                 h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('chunkHint')),
+              ),
+              h(
+                'div',
+                { className: 'mn-field' },
+                h(
+                  'label',
+                  { className: 'mn-label', htmlFor: 'mn-cfg-siliconflow-key' },
+                  t('siliconflowApiKey'),
+                ),
+                h('input', {
+                  id: 'mn-cfg-siliconflow-key',
+                  className: 'mn-input',
+                  type: 'password',
+                  autoComplete: 'off',
+                  spellCheck: false,
+                  placeholder: t('siliconflowApiKeyPlaceholder'),
+                  value: draft.siliconflowApiKey || '',
+                  disabled: recording,
+                  onChange: (event) => editDraft({ siliconflowApiKey: event.target.value }),
+                }),
+                h(
+                  'p',
+                  { className: 'mn-hint', style: { marginTop: 0 } },
+                  t('siliconflowApiKeyHint'),
+                ),
               ),
             ),
             h(

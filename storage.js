@@ -21,6 +21,8 @@ export const DEFAULT_CONFIG = {
   transcribeMode: 'after',
   language: 'zh',
   providerId: 'sensevoice-local',
+  // 硅基流动云端识别的密钥；为空时云端模型显示「未配置密钥」而非「准备失败」。
+  siliconflowApiKey: '',
   captureSystemAudio: true,
   captureMicrophone: true,
   chunkSeconds: 25,
@@ -65,7 +67,10 @@ export function normalizeConfig(input, fallback = DEFAULT_CONFIG) {
   if (!LANGUAGES.has(language)) throw new Error('不支持的语言');
 
   const providerId = String(pick('providerId') || 'sensevoice-local').trim();
-  if (!providerId) throw new Error('本地识别服务不能为空');
+  if (!providerId) throw new Error('识别服务不能为空');
+
+  const siliconflowApiKey = String(pick('siliconflowApiKey') || '').trim();
+  if (siliconflowApiKey.length > 300) throw new Error('硅基流动 API 密钥过长');
 
   const chunkRaw = Number(pick('chunkSeconds'));
   const chunkSeconds = Number.isFinite(chunkRaw) ? Math.min(60, Math.max(8, Math.round(chunkRaw))) : 25;
@@ -87,6 +92,7 @@ export function normalizeConfig(input, fallback = DEFAULT_CONFIG) {
     transcribeMode: mode,
     language,
     providerId,
+    siliconflowApiKey,
     captureSystemAudio,
     captureMicrophone,
     chunkSeconds,

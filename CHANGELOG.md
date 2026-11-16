@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.7.0
+
+新增硅基流动云端识别模型 XingChenASR-V3.2-Ultra，本地 / 云端可切换。
+
+- 新增 `xingchen.js`：硅基流动（SiliconFlow）云端 provider，id `xingchen-asr`、`location: 'cloud'`，把切好的 WAV 以 multipart（`file` + `model`）POST 到 `https://api.siliconflow.cn/v1/audio/transcriptions`，不需要下载或加载本地模型。密钥优先取插件配置 `siliconflowApiKey`，为空回退 `SILICONFLOW_API_KEY` 环境变量；没有密钥时模型行显示「未配置硅基流动 API 密钥」并保持 `unprepare`。
+- 错误按状态码归类（密钥无效 / 余额不足 / 接口或模型不存在 / 频繁 / 服务不可用 / 网络 / 超时），可重试的错误自动重试一次（800ms），取消信号不重试；`maxChunkSeconds: 50` 与 `asr.js` 的硬上限一致，`realtime: false`。
+- 语言集合 `auto/zh/en/yue`：接口未公开 `language` 参数，由模型自动判断中英与方言；切到云端模型时客户端会把 `ja` / `ko` 自动改为 `auto`，Host 侧也会校验并拒绝不支持的语言。
+- 设置页「识别」分组新增硅基流动 API 密钥输入框（密码形态、说明音频会上传到硅基流动、留空回退环境变量），保存随 `/config` 提交；模型行新增「硅基流动云端」来源标注、未配置密钥提示与「不建议开启实时转写」说明（实时分段延迟高且会重复上传），录音页的实时模式提示同步更新；中英文文案同步。
+- `storage.js` 新增 `siliconflowApiKey` 配置项（默认空，超过 300 字符拒绝）；`index.js` 把云端 provider 与两个本地 provider 一起注册进 `asr-registry`，启动 / 停止录音的报错文案去掉「本地」限定。
+- 测试：新增 `test/xingchen.mjs`（13 项：元数据、无密钥状态、multipart 字段、时长回退、错误归类、401 不重试、5xx 重试、取消不重试）；`test/models.mjs` 增加云端模型行 / 密钥输入框 / 保存载荷断言。真机实测 37.1 秒中文音频切成 2 段转写约 7.6 秒（约 0.24× 实时），转写文本连贯。
+- 文档与打包：README 补充云端模型、密钥配置、依赖与已知限制；`files` 增加 `xingchen.js`。
+
 ## v0.6.0
 
 适配 Linux：录音与会议检测在 Linux 上可用（Windows 仍不支持）。
