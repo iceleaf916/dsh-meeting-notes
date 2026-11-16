@@ -213,7 +213,7 @@ export function createMeetingDetector({
     const enabled = readConfig().detectEnabled !== false;
     return {
       enabled,
-      available: platform === 'darwin',
+      available: platform === 'darwin' || platform === 'linux',
       running,
       inMeeting,
       app: inMeeting ? app : '',
@@ -323,7 +323,10 @@ export function createMeetingDetector({
   function scheduleRestart() {
     if (!wants || disposed || retryTimer) return;
     if (retries >= MAX_RESTARTS) {
-      error = '会议检测进程无法启动，请确认 Xcode 命令行工具可用后重启 DSH';
+      error =
+        platform === 'linux'
+          ? '会议检测无法启动，请确认 pactl（pulseaudio-utils）可用后重启 DSH'
+          : '会议检测进程无法启动，请确认 Xcode 命令行工具可用后重启 DSH';
       emit();
       return;
     }
@@ -343,8 +346,8 @@ export function createMeetingDetector({
       emit();
       return;
     }
-    if (platform !== 'darwin') {
-      error = '当前平台暂不支持会议检测（需要 macOS 14.2+）';
+    if (platform !== 'darwin' && platform !== 'linux') {
+      error = '当前平台暂不支持会议检测（需要 macOS 14.2+ 或 Linux）';
       running = false;
       emit();
       return;

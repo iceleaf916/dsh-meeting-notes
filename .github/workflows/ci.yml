@@ -29,8 +29,8 @@ jobs:
       - name: 语法检查
         run: |
           set -euo pipefail
-          for f in index.js client.js storage.js capture.js asr.js minutes.js qwen3.js sensevoice.js \
-                   model-runtime.js wav.js asr-worker.js asr-registry.js; do
+          for f in index.js client.js storage.js capture.js capture-linux.js detector.js detect.js detect-linux.js \
+                   asr.js minutes.js qwen3.js sensevoice.js model-runtime.js wav.js asr-worker.js asr-registry.js; do
             node --check "$f"
           done
 
@@ -43,6 +43,7 @@ jobs:
           node test/detect.test.mjs
           node test/registry.mjs
           node test/sensevoice.mjs
+          node test/linux.test.mjs
 
       - name: 打包预检（不发布）
         run: ./publish.sh --ci --dry-run --skip-tests

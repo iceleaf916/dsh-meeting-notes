@@ -11,6 +11,12 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  ensureLinuxRecorder,
+  linuxPlatformInfo,
+  linuxRecorderState,
+  startLinuxRecorder,
+} from './capture-linux.js';
 
 const PLUGIN_DIR = path.dirname(fileURLToPath(import.meta.url));
 const RECORDER_DIR = path.join(PLUGIN_DIR, 'recorder');
@@ -23,6 +29,7 @@ const BUILD_TIMEOUT_MS = 180000;
 const STOP_GRACE_MS = 8000;
 
 export function platformInfo() {
+  if (process.platform === 'linux') return linuxPlatformInfo();
   const supported = process.platform === 'darwin';
   const arch = process.arch === 'arm64' ? 'arm64' : process.arch === 'x64' ? 'x64' : process.arch;
   return {
@@ -30,7 +37,7 @@ export function platformInfo() {
     platform: process.platform,
     arch,
     name: supported ? `macOS (${arch})` : `${process.platform} (${arch})`,
-    reason: supported ? '' : '当前插件仅支持 macOS 录音，Linux / Windows 采集后端尚未实现',
+    reason: supported ? '' : '当前插件支持 macOS 与 Linux 录音，Windows 采集后端尚未实现',
   };
 }
 
@@ -43,6 +50,7 @@ async function statOrNull(file) {
 }
 
 export async function recorderState() {
+  if (process.platform === 'linux') return linuxRecorderState();
   const binary = await statOrNull(BINARY);
   const source = await statOrNull(SOURCE);
   const stale = Boolean(binary && source && source.mtimeMs > binary.mtimeMs);
@@ -60,6 +68,7 @@ let building = null;
 /** 编译 Swift 辅助程序（首次使用或源码更新后）。并发调用合并为一次构建。 */
 export async function ensureRecorder() {
   if (!platformInfo().supported) throw new Error(platformInfo().reason);
+  if (process.platform === 'linux') return ensureLinuxRecorder();
   const state = await recorderState();
   if (state.built) return state;
   if (!state.sourceExists) throw new Error('录音辅助程序源码缺失，请重新安装插件');
@@ -114,8 +123,10 @@ export async function ensureRecorder() {
  * 启动录音进程。
  * @returns {{ stop: () => Promise<void>, kill: () => void, ready: Promise<void>, pid?: number }}
  */
-export function startRecorder({ captureSystemAudio = true, captureMicrophone = true, onPcm, onSignal, onExit }) {
+export function startRecorder(options = {}) {
+  const { captureSystemAudio = true, captureMicrophone = true, onPcm, onSignal, onExit } = options;
   if (!platformInfo().supported) throw new Error(platformInfo().reason);
+  if (process.platform === 'linux') return startLinuxRecorder(options);
   const args = [
     '--sample-rate',
     '16000',

@@ -14,6 +14,11 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  ensureLinuxDetector,
+  linuxDetectorState,
+  startLinuxDetector,
+} from './detect-linux.js';
 
 const PLUGIN_DIR = path.dirname(fileURLToPath(import.meta.url));
 const RECORDER_DIR = path.join(PLUGIN_DIR, 'recorder');
@@ -29,7 +34,7 @@ const DEFAULT_INTERVAL_MS = 500;
 const MIN_INTERVAL_MS = 100;
 const MAX_INTERVAL_MS = 60000;
 
-const PLATFORM_REASON = '当前插件仅支持 macOS 会议检测（需要 macOS 14.2+）';
+const PLATFORM_REASON = '当前插件支持 macOS 与 Linux 会议检测，Windows 检测后端尚未实现';
 
 async function statOrNull(file) {
   try {
@@ -41,6 +46,7 @@ async function statOrNull(file) {
 
 /** 检测器二进制与源码的构建状态（与 capture.js 的 recorderState 同构）。 */
 export async function detectorState() {
+  if (process.platform === 'linux') return linuxDetectorState();
   const binary = await statOrNull(BINARY);
   const source = await statOrNull(SOURCE);
   const stale = Boolean(binary && source && source.mtimeMs > binary.mtimeMs);
@@ -57,6 +63,7 @@ let building = null;
 
 /** 编译检测器（首次使用或源码更新后）。并发调用合并为一次构建。 */
 export async function ensureDetector() {
+  if (process.platform === 'linux') return ensureLinuxDetector();
   if (process.platform !== 'darwin') throw new Error(PLATFORM_REASON);
   const state = await detectorState();
   if (state.built) return state;
@@ -150,14 +157,16 @@ function normalizeTargets(targets) {
  * @returns {{ child: import('node:child_process').ChildProcess, ready: Promise<void>,
  *   stop: () => Promise<{ code: number|null, signal: string|null }>, kill: () => void, pid?: number }}
  */
-export function startDetector({
-  intervalMs = DEFAULT_INTERVAL_MS,
-  targets = [],
-  onReady,
-  onSample,
-  onError,
-  onExit,
-} = {}) {
+export function startDetector(options = {}) {
+  if (process.platform === 'linux') return startLinuxDetector(options);
+  const {
+    intervalMs = DEFAULT_INTERVAL_MS,
+    targets = [],
+    onReady,
+    onSample,
+    onError,
+    onExit,
+  } = options;
   if (process.platform !== 'darwin') throw new Error(PLATFORM_REASON);
 
   const args = ['--interval-ms', String(normalizeInterval(intervalMs))];

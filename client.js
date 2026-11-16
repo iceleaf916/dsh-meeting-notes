@@ -228,7 +228,7 @@ window.__ModuleLoader__.load({
       suggestAcceptEnd: '结束记录',
       suggestDismissEnd: '继续记录',
       suggestStartOk: '已开始记录',
-      detectUnavailableHint: '会议检测仅支持 macOS 14.2 及以上版本。',
+      detectUnavailableHint: '会议检测需要 macOS 14.2+ 或 Linux（pactl）。',
       suggestEndOk: '已结束记录',
     };
 
@@ -445,7 +445,7 @@ window.__ModuleLoader__.load({
       suggestStartTitle: 'A meeting may have started',
       suggestStartBody: '{app} is using the microphone or speakers. Start recording this meeting?',
       suggestStartBodyNoApp: 'A meeting app is using the microphone or speakers. Start recording this meeting?',
-      detectUnavailableHint: 'Meeting detection requires macOS 14.2 or later.',
+      detectUnavailableHint: 'Meeting detection requires macOS 14.2+ or Linux with pactl.',
       suggestAcceptStart: 'Start recording',
       suggestDismissStart: 'Not now',
       suggestEndTitle: 'The meeting may have ended',

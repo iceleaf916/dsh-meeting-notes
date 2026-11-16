@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.0
+
+适配 Linux：录音与会议检测在 Linux 上可用（Windows 仍不支持）。
+
+- 新增 `capture-linux.js`：读取 `pactl` 的默认 sink / 默认输入源，为 sink 的 `.monitor` 源与默认麦克风各起一路 `parec`（16kHz 单声道 s16le、20ms 延迟）；`PcmMixer` 按「首块到达时间 − 块时长」估算每路起点，晚开始的流补静音，每 20ms 按绝对时间轴逐样本相加并 clamp 到 int16，每 100ms 上报合并电平。启动前用 `pactl list short sources` 校验设备名（PipeWire 的 pulse 兼容层遇到不存在的源会永久阻塞），支持 `DSH_MEETING_SYSTEM_SOURCE` / `DSH_MEETING_MIC_SOURCE` 覆盖。
+- 新增 `detect-linux.js`：用 `ps -eo pid=,comm=` 精确匹配腾讯会议（`wemeetapp` / `wemeet`）与企业微信会议（`wwmapp` / `wxwork` 等）进程，再读 `pactl -f json list sink-inputs|source-outputs`（不可用时回退文本解析）判断该进程是否在放音 / 收音，名字或描述含 `wemeet` 的专用 sink 也算在会中；进程名精确匹配避免把企业微信目录里的 `wemeet.dll` 误判成腾讯会议。不依赖 X11 窗口标题，Wayland 下可用。
+- `capture.js` / `detector.js` 增加 Linux 分派，`detect.js` 的 `available` 与错误文案按平台区分；`/state.capabilities.buildRecorder` 在 Linux 为 `false`（不需要编译）；录音失败提示改为 Linux 的设备检查说明；客户端「会议检测仅支持 macOS」提示改为「macOS 14.2+ 或 Linux（pactl）」，中英文同步。
+- 测试：新增 `test/linux.test.mjs`（8 项：混音对齐与截断、单路电平、`pactl` 解析、设备解析、检测采样契约与幂等停止），无 `pactl` 时检测用例自动跳过；真机 PipeWire 1.6.4 验证双路录音、静音设备、模拟 `wemeetapp` 进程与音频流均正常。
+- 文档与打包：README 补充 Linux 依赖（`pulseaudio-utils` / PipeWire）、采集与检测实现说明、已知限制；`files` 增加 `capture-linux.js` / `detect-linux.js`。
+
 ## v0.5.0
 
 识别引擎改由插件自带，不再依赖 DSH 语音输入插件。

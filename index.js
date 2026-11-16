@@ -283,7 +283,10 @@ export function apply(ctx, config = {}) {
       recording: recordingPayload(),
       detect: detector ? detector.snapshot() : null,
       meetings,
-      capabilities: { buildRecorder: platform.supported, recorderBuilt: recorder.built },
+      capabilities: {
+        buildRecorder: platform.supported && platform.platform === 'darwin',
+        recorderBuilt: recorder.built,
+      },
     };
   }
 
@@ -498,10 +501,11 @@ export function apply(ctx, config = {}) {
       await wav.close().catch(() => {});
       await deleteMeeting(config.storageDir, created.id).catch(() => {});
       const message = error instanceof Error ? error.message : String(error);
-      throw new HttpError(
-        400,
-        `${message}\n如果提示没有权限，请到「系统设置 → 隐私与安全性」给 DeepSeek Harness 开启「屏幕录制」（采系统音频）和「麦克风」权限，然后重启 DSH。`,
-      );
+      const hint =
+        platform.platform === 'linux'
+          ? '请在系统设置里确认默认扬声器与麦克风可用；Linux 通过 PipeWire / PulseAudio 的 monitor 源采集系统声音，会议应用需要把声音输出到默认扬声器。'
+          : '如果提示没有权限，请到「系统设置 → 隐私与安全性」给 DeepSeek Harness 开启「屏幕录制」（采系统音频）和「麦克风」权限，然后重启 DSH。';
+      throw new HttpError(400, `${message}\n${hint}`);
     }
   }
 
