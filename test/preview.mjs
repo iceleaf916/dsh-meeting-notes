@@ -484,7 +484,17 @@ for (const theme of ['light', 'dark']) {
       gear.click();
       await new Promise((r) => setTimeout(r, 80));
     });
-    snapshot(theme, `main-settings-${theme}`);
+    for (const [label, key] of [['语音转录', 'transcribe'], ['会议录音', 'record'], ['通用', 'general']]) {
+      const dialog = container.querySelector('[role="dialog"]');
+      const tabBtn = dialog && [...dialog.querySelectorAll('[role="tab"]')].find((el) => (el.textContent || '').trim() === label);
+      if (tabBtn) {
+        await act(async () => {
+          tabBtn.click();
+          await new Promise((r) => setTimeout(r, 60));
+        });
+      }
+      snapshot(theme, `main-settings-${key}-${theme}`);
+    }
     const close = [...container.querySelectorAll('button')].find((el) => (el.getAttribute('aria-label') || '') === '关闭');
     if (close) {
       await act(async () => {

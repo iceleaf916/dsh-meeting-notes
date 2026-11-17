@@ -1,4 +1,4 @@
-// 模型列表交互测试：验证设置页里多模型列表、切换模型、下载/取消准备三条链路。
+// 模型下拉测试：设置页与顶栏都用下拉选择模型，验证状态文案、详情卡、切换、下载/取消准备与保存。
 // 用法：在仓库根目录执行 `node test/models.mjs`（依赖根目录 node_modules 里的 react/react-dom/jsdom）。
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
@@ -151,7 +151,7 @@ globalThis.fetch = async (input, init = {}) => {
   }
   if (url.endsWith('/dsh-meeting-notes/state')) return jsonResponse(state);
   if (url.endsWith('/dsh-meeting-notes/config')) {
-    selectProvider(body.providerId);
+    if (body && body.providerId) selectProvider(body.providerId);
     return jsonResponse({ ok: true, config: state.config, storage: state.storage });
   }
   if (url.endsWith('/dsh-meeting-notes/prepare')) {
@@ -268,49 +268,47 @@ await act(async () => {
 });
 
 const panel = () => container.querySelector('[role="dialog"]');
-const row = (id) => panel() && panel().querySelector(`[data-model="${id}"]`);
-const rowButton = (id, label) => {
-  const node = row(id);
+const detail = () => panel() && panel().querySelector('[data-model]');
+const detailButton = (label) => {
+  const node = detail();
   return node ? [...node.querySelectorAll('button')].find((el) => (el.textContent || '').includes(label)) : null;
+};
+const picker = () => panel() && panel().querySelector('#mn-model-select');
+const configCalls = () => calls.filter((call) => call.method === 'POST' && call.url.endsWith('/dsh-meeting-notes/config'));
+const pickModel = async (id) => {
+  const select = picker();
+  select.value = id;
+  await act(async () => {
+    select.dispatchEvent(new window.Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 80));
+  });
 };
 
 ok(!!panel(), '设置弹窗打开');
 ok((panel()?.textContent || '').includes('识别模型'), '设置页出现「识别模型」分组');
-ok(!!row('sensevoice-local') && !!row('whisper-local'), '模型列表渲染两个模型（列表形式可扩展）');
-ok((row('sensevoice-local')?.textContent || '').includes('插件自带'), '自带引擎标注「插件自带」来源');
-ok((row('whisper-local')?.textContent || '').includes('DSH 语音插件'), 'DSH provider 标注「DSH 语音插件」来源');
-ok((row('sensevoice-local')?.textContent || '').includes('当前使用'), '当前模型标注「当前使用」');
-ok((row('whisper-local')?.textContent || '').includes('下载并准备'), '未准备的模型显示「下载并准备」');
-ok((row('whisper-local')?.textContent || '').includes('硬盘占用约 0.5 GB'), '未准备模型显示磁盘估算');
+ok(!!picker(), '识别模型改为下拉选择');
+ok(picker()?.value === 'sensevoice-local', '下拉默认停在当前使用的模型');
+const options = [...(picker()?.options || [])];
+ok(options.length === 3, '下拉列出全部 3 个模型');
+ok((options[0]?.textContent || '').includes('已就绪'), '就绪模型选项标注「已就绪」');
+ok((options[1]?.textContent || '').includes('未下载'), '本地未下载模型选项标注「未下载」');
+ok((options[2]?.textContent || '').includes('未配置密钥'), '云端未配置模型选项标注「未配置密钥」');
+ok(panel().querySelectorAll('[data-model]').length === 1, '同一时间只展示所选模型的详情卡');
+ok((detail()?.textContent || '').includes('当前使用'), '默认详情卡是当前使用模型并标注「当前使用」');
+ok((detail()?.textContent || '').includes('插件自带'), '自带引擎标注「插件自带」来源');
 
-// 云端模型：标注来源、没有下载动作、未配置密钥与「不建议实时转写」都写进描述
-ok((row('xingchen-asr')?.textContent || '').includes('硅基流动云端'), '云端模型标注「硅基流动云端」');
-ok(!rowButton('xingchen-asr', '下载并准备'), '云端模型不显示「下载并准备」');
-ok((row('xingchen-asr')?.textContent || '').includes('未配置硅基流动 API 密钥'), '云端模型提示未配置密钥');
-ok((row('xingchen-asr')?.textContent || '').includes('不建议开启实时转写'), '云端模型说明不建议实时转写');
+// 下拉只切换查看对象，详情卡跟随
+await pickModel('whisper-local');
+ok(detail()?.getAttribute('data-model') === 'whisper-local', '下拉切换后详情卡跟随所选模型');
+ok((detail()?.textContent || '').includes('DSH 语音插件'), 'DSH provider 标注「DSH 语音插件」来源');
+ok((detail()?.textContent || '').includes('未下载'), '未下载本地模型状态为「未下载」');
+ok(!!detailButton('下载并准备'), '未下载模型显示「下载并准备」');
+ok((detail()?.textContent || '').includes('硬盘占用约 0.5 GB'), '未下载模型显示磁盘估算');
+ok(!!detailButton('使用该模型'), '未选中的模型有「使用该模型」按钮');
 
-// 云端模型行内的密钥输入框：密码形态、说明提到环境变量回退
-const keyInput = panel().querySelector('[data-field="siliconflow-key"]');
-ok(!!keyInput, '云端模型行内有硅基流动 API 密钥输入框');
-ok(keyInput?.getAttribute('type') === 'password', '密钥输入框以密码形式展示');
-ok((panel()?.textContent || '').includes('SILICONFLOW_API_KEY'), '密钥说明提到环境变量回退');
-
-// 1) 切换模型：POST /config 带 providerId
-const useBtn = rowButton('whisper-local', '使用该模型');
-ok(!!useBtn, '未选中的模型有「使用该模型」按钮');
-if (useBtn) {
-  await act(async () => {
-    useBtn.click();
-    await new Promise((r) => setTimeout(r, 120));
-  });
-  const saved = calls.find((call) => call.method === 'POST' && call.url.endsWith('/dsh-meeting-notes/config'));
-  ok(!!saved && saved.body && saved.body.providerId === 'whisper-local', '切换模型 POST /config 带 providerId');
-  ok(!!row('whisper-local') && (row('whisper-local').textContent || '').includes('当前使用'), '切换后该模型标为「当前使用」');
-}
-
-// 2) 下载准备：POST /prepare，进度条与取消按钮出现
-const prepareBtn = rowButton('whisper-local', '下载并准备');
-ok(!!prepareBtn, '重新查询到「下载并准备」按钮');
+// 1) 下载准备：POST /prepare，进度条与取消按钮出现
+const prepareBtn = detailButton('下载并准备');
+ok(!!prepareBtn, '找到「下载并准备」按钮');
 if (prepareBtn) {
   await act(async () => {
     prepareBtn.click();
@@ -319,13 +317,13 @@ if (prepareBtn) {
   const prepared = calls.find((call) => call.method === 'POST' && call.url.endsWith('/dsh-meeting-notes/prepare'));
   ok(!!prepared && prepared.body && prepared.body.providerId === 'whisper-local', '下载准备 POST /prepare 带 providerId');
   ok(prepared?.headers && (prepared.headers['x-dsh-meeting-notes'] === '1' || prepared.headers['X-Meeting-Notes'] === '1'), 'POST /prepare 带 x-dsh-meeting-notes 头');
-  const downloadingText = row('whisper-local')?.textContent || '';
+  const downloadingText = detail()?.textContent || '';
   ok(/下载：25 \/ 100 MB/.test(downloadingText), '下载中显示字节进度');
   ok(downloadingText.includes('取消准备'), '下载中显示「取消准备」按钮');
-  ok(!!row('whisper-local')?.querySelector('[role="progressbar"]'), '下载中渲染进度条');
+  ok(!!detail()?.querySelector('[role="progressbar"]'), '下载中渲染进度条');
 
-  // 3) 取消准备：POST /prepare/cancel
-  const cancelBtn = rowButton('whisper-local', '取消准备');
+  // 2) 取消准备：POST /prepare/cancel
+  const cancelBtn = detailButton('取消准备');
   if (cancelBtn) {
     await act(async () => {
       cancelBtn.click();
@@ -333,13 +331,42 @@ if (prepareBtn) {
     });
     const cancelled = calls.find((call) => call.method === 'POST' && call.url.endsWith('/dsh-meeting-notes/prepare/cancel'));
     ok(!!cancelled && cancelled.body && cancelled.body.providerId === 'whisper-local', '取消准备 POST /prepare/cancel 带 providerId');
-    ok((row('whisper-local')?.textContent || '').includes('已取消'), '取消后状态显示已取消');
+    ok((detail()?.textContent || '').includes('已取消'), '取消后状态显示已取消');
   } else {
     fail('下载中没有找到「取消准备」按钮');
   }
 }
 
-// 4) 保存配置：POST /config 里带上密钥字段（留空表示回退环境变量）
+// 3) 使用该模型：POST /config 带 providerId，详情卡标为当前使用
+const useBtn = detailButton('使用该模型');
+ok(!!useBtn, '详情卡保留「使用该模型」按钮');
+if (useBtn) {
+  await act(async () => {
+    useBtn.click();
+    await new Promise((r) => setTimeout(r, 120));
+  });
+  const switched = configCalls().at(-1);
+  ok(!!switched && switched.body && switched.body.providerId === 'whisper-local', '切换模型 POST /config 带 providerId');
+  ok((detail()?.textContent || '').includes('当前使用'), '切换后该模型标为「当前使用」');
+}
+
+// 4) 云端模型：仅浏览不触发切换；未配置密钥与「不建议实时转写」都写进详情
+const configCountBeforePick = configCalls().length;
+await pickModel('xingchen-asr');
+ok(detail()?.getAttribute('data-model') === 'xingchen-asr', '下拉切到云端模型后详情卡跟随');
+ok(configCalls().length === configCountBeforePick, '仅浏览云端模型不会修改配置');
+ok((detail()?.textContent || '').includes('硅基流动云端'), '云端模型标注「硅基流动云端」');
+ok(!detailButton('下载并准备'), '云端模型不显示「下载并准备」');
+ok((detail()?.textContent || '').includes('未配置密钥'), '云端模型状态为「未配置密钥」');
+ok((detail()?.textContent || '').includes('未配置硅基流动 API 密钥'), '云端模型提示未配置密钥');
+ok((detail()?.textContent || '').includes('不建议开启实时转写'), '云端模型说明不建议实时转写');
+
+const keyInput = panel().querySelector('[data-field="siliconflow-key"]');
+ok(!!keyInput, '云端模型行内有硅基流动 API 密钥输入框');
+ok(keyInput?.getAttribute('type') === 'password', '密钥输入框以密码形式展示');
+ok((panel()?.textContent || '').includes('SILICONFLOW_API_KEY'), '密钥说明提到环境变量回退');
+
+// 5) 保存配置：POST /config 里带上密钥字段（留空表示回退环境变量）
 const saveBtn = [...(panel()?.querySelectorAll('button') || [])].find((el) =>
   (el.textContent || '').includes('保存配置'),
 );
@@ -349,14 +376,31 @@ if (saveBtn) {
     saveBtn.click();
     await new Promise((r) => setTimeout(r, 120));
   });
-  const saveCall = calls
-    .filter((call) => call.method === 'POST' && call.url.endsWith('/dsh-meeting-notes/config'))
-    .at(-1);
+  const saveCall = configCalls().at(-1);
   ok(
     !!saveCall && Object.prototype.hasOwnProperty.call(saveCall.body, 'siliconflowApiKey'),
     '保存 POST /config 带 siliconflowApiKey 字段',
   );
+  ok(!panel(), '保存后设置弹窗关闭');
 }
+
+// 6) 顶栏模型入口：下拉列表，选中即切换
+const topbarModel = () =>
+  [...container.querySelectorAll('select')].find((el) => el.getAttribute('aria-label') === '选择识别模型');
+ok(!!topbarModel(), '顶栏模型入口是下拉列表');
+ok([...(topbarModel()?.options || [])].length === 3, '顶栏下拉列出全部模型');
+const beforeTopbarSwitch = configCalls().length;
+await act(async () => {
+  topbarModel().value = 'xingchen-asr';
+  topbarModel().dispatchEvent(new window.Event('change', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 160));
+});
+const topbarSwitched = configCalls().at(-1);
+ok(
+  configCalls().length > beforeTopbarSwitch && topbarSwitched?.body?.providerId === 'xingchen-asr',
+  '顶栏下拉切换模型直接 POST /config 带 providerId',
+);
+ok(topbarModel()?.value === 'xingchen-asr', '顶栏下拉反映切换结果');
 
 console.log(process.exitCode ? 'MODELS FAILED' : 'MODELS OK');
 await act(async () => {

@@ -258,7 +258,7 @@ if (meetingBtn) {
   }
 }
 
-// 设置弹窗：打开 -> 改字段 -> 有未保存提示 -> 保存 POST /config 并关闭
+// 设置弹窗：分栏切换 -> 改字段 -> 未保存提示 -> 保存 POST /config 并关闭
 const settingsBtn = [...container.querySelectorAll('button')].find(
   (el) => (el.getAttribute('aria-label') || '') === '设置' || el.getAttribute('title') === '设置',
 );
@@ -270,15 +270,44 @@ if (settingsBtn) {
   });
   const dialog = container.querySelector('[role="dialog"]');
   ok(!!dialog, '点击设置后出现 role=dialog 弹窗');
-  ok(!!dialog && (dialog.textContent || '').includes('识别模型'), '设置页出现「识别模型」分组');
-  ok(!!dialog && (dialog.textContent || '').includes('SenseVoiceSmall'), '设置页模型列表显示 SenseVoiceSmall');
-  ok(!!dialog && (dialog.textContent || '').includes('当前使用'), '设置页模型列表标出当前使用的模型');
-  ok(!!dialog && (dialog.textContent || '').includes('会议提醒'), '设置页出现「会议提醒」分组');
-  ok(!!dialog && (dialog.textContent || '').includes('发送测试通知'), '设置页提供「发送测试通知」按钮');
+  const tablist = dialog && dialog.querySelector('[role="tablist"]');
+  ok(!!tablist, '设置弹窗顶部出现分栏 tablist');
+  const tabButtons = tablist ? [...tablist.querySelectorAll('[role="tab"]')] : [];
+  ok(
+    tabButtons.map((el) => (el.textContent || '').trim()).join('|') === '语音转录|会议录音|通用',
+    '设置分栏为 语音转录 / 会议录音 / 通用',
+  );
+  const selectedLabel = () => {
+    const selected = dialog && dialog.querySelector('[role="tab"][aria-selected="true"]');
+    return (selected && selected.textContent) || '';
+  };
+  const groupTitles = () =>
+    dialog ? [...dialog.querySelectorAll('.mn-group-head h3')].map((el) => (el.textContent || '').trim()) : [];
+  ok(selectedLabel() === '语音转录', '默认选中「语音转录」分栏');
+  ok(!!dialog && !!dialog.querySelector('[role="tabpanel"]'), '分栏内容包在 role=tabpanel 里');
+  ok(groupTitles().join('|') === '识别模型|识别', '语音转录分栏包含「识别模型」与「识别」分组');
+  ok(!!dialog && (dialog.textContent || '').includes('SenseVoiceSmall'), '模型列表显示 SenseVoiceSmall');
+  ok(!!dialog && (dialog.textContent || '').includes('当前使用'), '模型列表标出当前使用的模型');
+  const clickTab = async (label) => {
+    const tab = [...dialog.querySelectorAll('[role="tab"]')].find((el) => (el.textContent || '').trim() === label);
+    ok(!!tab, `找到「${label}」分栏`);
+    if (!tab) return;
+    await act(async () => {
+      tab.click();
+      await new Promise((r) => setTimeout(r, 60));
+    });
+  };
+  // 方向键切换：焦点在 tablist 内时右移一格。
+  await act(async () => {
+    tabButtons[0].dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await new Promise((r) => setTimeout(r, 60));
+  });
+  ok(selectedLabel() === '会议录音', '方向键切换到下一分栏');
   const dirInput = dialog && dialog.querySelector('input[type="text"]');
-  ok(!!dirInput, '弹窗内出现存储目录输入框');
+  ok(!!dirInput, '会议录音分栏出现存储目录输入框');
+  ok(groupTitles().join('|') === '存储|采集', '会议录音分栏包含「存储」与「采集」分组');
   const switchInput = dialog && dialog.querySelector('input[type="checkbox"]');
-  ok(!!switchInput, '弹窗内出现采集开关');
+  ok(!!switchInput, '会议录音分栏出现采集开关');
   if (switchInput) {
     // jsdom 的 document 没有 oninput，React 会退化到 propertychange 路径，文本输入无法冒泡；
     // 这里用 checkbox 的 click 触发变更（真实浏览器两条路径都可用）。
@@ -287,17 +316,21 @@ if (settingsBtn) {
       await new Promise((r) => setTimeout(r, 60));
     });
     ok((dialog.textContent || '').includes('有未保存的修改'), '编辑后显示未保存提示');
-    const saveBtn = [...dialog.querySelectorAll('button')].find((el) => (el.textContent || '').includes('保存配置'));
-    ok(!!saveBtn, '弹窗内有保存配置按钮');
-    if (saveBtn) {
-      await act(async () => {
-        saveBtn.click();
-        await new Promise((r) => setTimeout(r, 120));
-      });
-      const saved = calls.find((c) => c.method === 'POST' && c.url.endsWith('/dsh-meeting-notes/config'));
-      ok(!!saved, '保存设置 POST /config');
-      ok(!container.querySelector('[role="dialog"]'), '保存后弹窗关闭');
-    }
+  }
+  await clickTab('通用');
+  ok(groupTitles().join('|') === '会议提醒', '通用分栏只包含「会议提醒」分组');
+  ok((dialog.textContent || '').includes('发送测试通知'), '通用分栏提供「发送测试通知」按钮');
+  ok((dialog.textContent || '').includes('有未保存的修改'), '切换分栏后未保存提示仍在');
+  const saveBtn = [...dialog.querySelectorAll('button')].find((el) => (el.textContent || '').includes('保存配置'));
+  ok(!!saveBtn, '弹窗内有保存配置按钮');
+  if (saveBtn) {
+    await act(async () => {
+      saveBtn.click();
+      await new Promise((r) => setTimeout(r, 120));
+    });
+    const saved = calls.find((c) => c.method === 'POST' && c.url.endsWith('/dsh-meeting-notes/config'));
+    ok(!!saved, '保存设置 POST /config');
+    ok(!container.querySelector('[role="dialog"]'), '保存后弹窗关闭');
   }
 }
 

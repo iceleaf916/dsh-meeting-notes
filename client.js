@@ -22,7 +22,7 @@ window.__ModuleLoader__.load({
       loadStateFailed: '读取会议记录状态失败',
       platformUnsupported: '当前平台暂不支持录制系统声音与麦克风，只能浏览已有会议。',
       modelLabel: '识别模型',
-      modelHint: '查看或切换转写模型',
+      modelSelectLabel: '选择识别模型',
       prepare: '下载模型',
       prepareRetry: '重新准备',
       prepareStarted: '已开始准备本地模型，进度见模型状态。',
@@ -138,6 +138,10 @@ window.__ModuleLoader__.load({
       transcribingHint: '转写进行中，完成后文稿会自动出现。',
       settings: '设置',
       settingsSubtitle: '识别模型、录音存储、语言、采集方式与会议提醒',
+      settingsTabsLabel: '设置分类',
+      settingsTabTranscribe: '语音转录',
+      settingsTabRecord: '会议录音',
+      settingsTabGeneral: '通用',
       closeDialog: '关闭',
       dialogCancel: '取消',
       sectionStorage: '存储',
@@ -156,6 +160,9 @@ window.__ModuleLoader__.load({
       modelSourceDsh: 'DSH 语音插件',
       modelSourceCloud: '硅基流动云端',
       modelCurrent: '当前使用',
+      modelStateReady: '已就绪',
+      modelStateNotDownloaded: '未下载',
+      modelStateNoKey: '未配置密钥',
       useModel: '使用该模型',
       modelSelected: '已切换识别模型',
       modelDownload: '下载并准备',
@@ -251,7 +258,7 @@ window.__ModuleLoader__.load({
       loadStateFailed: 'Failed to load meeting notes state',
       platformUnsupported: 'Recording system audio and microphone is not supported on this platform yet; browsing existing meetings still works.',
       modelLabel: 'Model',
-      modelHint: 'View or switch transcription models',
+      modelSelectLabel: 'Choose recognition model',
       prepare: 'Download model',
       prepareRetry: 'Retry preparation',
       prepareStarted: 'Model preparation started; watch the model status.',
@@ -367,6 +374,10 @@ window.__ModuleLoader__.load({
       transcribingHint: 'Transcription in progress; the transcript appears when it finishes.',
       settings: 'Settings',
       settingsSubtitle: 'Recognition models, storage, language, capture sources and meeting reminders',
+      settingsTabsLabel: 'Settings sections',
+      settingsTabTranscribe: 'Transcription',
+      settingsTabRecord: 'Recording',
+      settingsTabGeneral: 'General',
       closeDialog: 'Close',
       dialogCancel: 'Cancel',
       sectionStorage: 'Storage',
@@ -385,6 +396,9 @@ window.__ModuleLoader__.load({
       modelSourceDsh: 'DSH voice plugin',
       modelSourceCloud: 'SiliconFlow cloud',
       modelCurrent: 'In use',
+      modelStateReady: 'Ready',
+      modelStateNotDownloaded: 'Not downloaded',
+      modelStateNoKey: 'No API key',
       useModel: 'Use this model',
       modelSelected: 'Recognition model switched',
       modelDownload: 'Download and prepare',
@@ -523,6 +537,10 @@ window.__ModuleLoader__.load({
 .mn-chip:hover{background:var(--mn-hover)}
 .mn-chip b{font-weight:500;color:var(--mn-text);overflow:hidden;text-overflow:ellipsis}
 .mn-chip .mn-sep{opacity:.5}
+.mn-model-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 6px 0 10px;max-width:100%;border-radius:var(--mn-radius-sm);border:.5px solid var(--dsw-alias-border-l3,var(--mn-line-strong));color:var(--mn-muted)}
+.mn-model-chip select{box-sizing:border-box;height:26px;max-width:340px;border:0;border-radius:var(--mn-radius-sm);background:transparent;color:var(--mn-text);font-family:inherit;font-size:12px;line-height:18px;padding:0 2px;outline:none;cursor:pointer;text-overflow:ellipsis}
+.mn-model-chip select:focus-visible{outline:2px solid color-mix(in srgb,var(--mn-accent) 45%,transparent);outline-offset:1px}
+.mn-model-chip select:disabled{cursor:not-allowed;opacity:.6}
 
 /* ---------- buttons ---------- */
 .mn-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;height:36px;padding:0 14px;border:0;border-radius:var(--mn-radius-md);background:transparent;color:var(--mn-text);font-size:14px;line-height:22px;cursor:pointer;white-space:nowrap;transition:background var(--mn-dur) var(--mn-ease),box-shadow var(--mn-dur) var(--mn-ease),opacity var(--mn-dur) var(--mn-ease)}
@@ -700,6 +718,9 @@ window.__ModuleLoader__.load({
 .mn-modal-foot .mn-modal-note{margin-right:auto;font-size:12px;line-height:18px;color:var(--mn-muted)}
 .mn-modal-actions{display:flex;align-items:center;gap:8px}
 .mn-modal-settings{width:min(560px,100%)}
+.mn-modal-settings .mn-modal-tabs{margin:0;padding:0 24px;gap:20px;flex:0 0 auto}
+.mn-modal-settings .mn-tab{height:34px}
+.mn-tabpanel{outline:none;padding-top:4px}
 .mn-modal-body>.mn-group:first-child{padding-top:4px}
 .mn-confirm-warning{display:flex;align-items:flex-start;gap:10px;color:var(--mn-muted);font-size:14px;line-height:22px}
 .mn-confirm-warning p{margin:0}
@@ -742,7 +763,6 @@ window.__ModuleLoader__.load({
 .mn-switch input:focus-visible+.mn-switch-track{outline:2px solid color-mix(in srgb,var(--mn-accent) 45%,transparent);outline-offset:2px}
 
 /* ---------- models ---------- */
-.mn-chip-btn{cursor:pointer;font:inherit;text-align:left;transition:background var(--mn-dur) var(--mn-ease),color var(--mn-dur) var(--mn-ease)}
 .mn-link{border:0;background:none;padding:0;color:var(--mn-accent);font:inherit;font-size:13px;line-height:20px;cursor:pointer;white-space:nowrap}
 .mn-link:hover{text-decoration:underline}
 .mn-model-warn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;border-radius:var(--mn-radius-sm);background:color-mix(in srgb,var(--mn-warn) 8%,transparent);color:var(--mn-warn);font-size:12px;line-height:18px}
@@ -939,6 +959,8 @@ window.__ModuleLoader__.load({
           live: { partial: '', segments: [] },
           busy: '',
           settingsOpen: false,
+          settingsTab: 'transcribe',
+          modelPick: '',
           cfgBase: null,
           docTab: 'transcript',
           cfgDraft: null,
@@ -1018,6 +1040,17 @@ window.__ModuleLoader__.load({
 
         const langLabel = (code) => (LANG_KEY[code] ? t(LANG_KEY[code]) : String(code || ''));
         const phaseLabel = (phase) => t(PHASE_KEY[phase] || 'phaseUnprepared');
+        // 模型状态按来源区分：本地未下载 vs 云端未配置密钥，就绪则统一为「已就绪」。
+        const modelStatusLabel = (model) => {
+          const phase = model?.preparation?.phase || (model?.ready ? 'ready' : 'unprepare');
+          if (phase === 'ready' || phase === 'standby') return t('modelStateReady');
+          if (phase === 'unprepare' || phase === 'unprepared') {
+            if (model?.ready) return t('modelStateReady');
+            return t(model?.location === 'cloud' ? 'modelStateNoKey' : 'modelStateNotDownloaded');
+          }
+          return phaseLabel(phase);
+        };
+        const modelOptionLabel = (model) => `${model?.name || model?.id || ''} · ${modelStatusLabel(model)}`;
         const phaseTone = (phase) => {
           if (phase === 'ready' || phase === 'standby') return 'ok';
           if (phase === 'failed' || phase === 'cancelled') return 'hot';
@@ -1669,7 +1702,7 @@ window.__ModuleLoader__.load({
 
         const openSettings = () => {
           const base = cfgFrom(store.get().state?.config);
-          store.set({ settingsOpen: true, cfgBase: base, cfgDraft: { ...base }, cfgDirty: false });
+          store.set({ settingsOpen: true, modelPick: '', cfgBase: base, cfgDraft: { ...base }, cfgDirty: false });
         };
 
         const closeSettings = () => {
@@ -2280,7 +2313,7 @@ window.__ModuleLoader__.load({
 
         const FOCUSABLE = 'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
 
-        function Modal({ open, title, description, children, footer, onClose, closeLabel, width, className }) {
+        function Modal({ open, title, description, tabs, children, footer, onClose, closeLabel, width, className }) {
           const boxRef = React.useRef(null);
           const restoreRef = React.useRef(null);
 
@@ -2355,6 +2388,7 @@ window.__ModuleLoader__.load({
                   : null,
               ),
               description ? h('p', { className: 'mn-modal-desc' }, description) : null,
+              tabs || null,
               h('div', { className: 'mn-modal-body' }, children),
               footer ? h('div', { className: 'mn-modal-foot' }, footer) : null,
             ),
@@ -2588,19 +2622,23 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'mn-topbar-right' },
-              // 模型状态只是入口：下载/切换都在设置页的模型列表里完成。
-              h(
-                Tooltip,
-                { label: t('modelHint'), side: 'bottom', align: 'end' },
-                h(
-                  'button',
-                  { type: 'button', className: 'mn-chip mn-chip-btn', onClick: openSettings },
-                  h(StatusDot, { tone: ready ? 'ok' : phaseTone(phase) }),
-                  h('b', null, current?.name || t('modelLabel')),
-                  h('span', { className: 'mn-sep' }, '·'),
-                  h('span', null, phaseLabel(phase)),
-                ),
-              ),
+              // 模型下拉本身就是切换入口：选中即生效，下载与密钥在设置里配置。
+              models.length
+                ? h(
+                    'div',
+                    { className: 'mn-model-chip' },
+                    h(StatusDot, { tone: ready ? 'ok' : phaseTone(phase) }),
+                    h(
+                      'select',
+                      {
+                        'aria-label': t('modelSelectLabel'),
+                        value: current?.id || '',
+                        onChange: (event) => void selectModel(event.target.value),
+                      },
+                      models.map((model) => h('option', { key: model.id, value: model.id }, modelOptionLabel(model))),
+                    ),
+                  )
+                : h('span', { className: 'mn-chip' }, t('modelLabel')),
               h(
                 Tooltip,
                 { label: t('settings'), side: 'bottom', align: 'end' },
@@ -3136,7 +3174,7 @@ window.__ModuleLoader__.load({
                   'div',
                   { className: 'mn-model-meta' },
                   h(StatusDot, { tone: phaseTone(phase) }),
-                  h('span', null, phaseLabel(phase)),
+                  h('span', null, modelStatusLabel(model)),
                   model.location === 'cloud'
                     ? h('span', { 'data-source': 'cloud' }, `· ${t('modelSourceCloud')}`)
                     : model.source === 'plugin' || model.source === 'dsh'
@@ -3419,11 +3457,25 @@ window.__ModuleLoader__.load({
           );
         }
 
+        // 设置项按用途分栏，避免弹窗越拉越长：语音转录 / 会议录音 / 通用。
+        const SETTINGS_TABS = ['transcribe', 'record', 'general'];
+        const SETTINGS_TAB_LABELS = {
+          transcribe: 'settingsTabTranscribe',
+          record: 'settingsTabRecord',
+          general: 'settingsTabGeneral',
+        };
+
         function SettingsDialog() {
           const s = useStore();
           const draft = s.cfgDraft || cfgFrom(s.state?.config);
           const languages = s.state?.provider?.languages || ['auto', 'zh', 'en', 'yue', 'ja', 'ko'];
           const models = modelList(s.state);
+          // 下拉框只决定「查看/配置哪个模型」，实际切换仍由详情卡里的「使用该模型」完成。
+          const pickedModel =
+            models.find((model) => model.id === s.modelPick) ||
+            models.find((model) => model.selected) ||
+            models[0] ||
+            null;
           const recording = !!s.state?.recording?.active;
           const notifyPermission = canNotify() ? window.Notification.permission : '';
           const detectNotifyDenied = notifyPermission === 'denied';
@@ -3431,6 +3483,236 @@ window.__ModuleLoader__.load({
           const detectState = s.state?.detect || null;
           const detectUnavailable = !!detectState && detectState.available === false;
           const detectError = detectState && detectState.error ? String(detectState.error) : '';
+          const activeTab = SETTINGS_TABS.includes(s.settingsTab) ? s.settingsTab : 'transcribe';
+
+          // 方向键 / Home / End 切换分栏，焦点跟随选中项（标准 tabs 交互）。
+          const onTabKeyDown = (event) => {
+            const index = SETTINGS_TABS.indexOf(activeTab);
+            let next = -1;
+            if (event.key === 'ArrowRight') next = (index + 1) % SETTINGS_TABS.length;
+            else if (event.key === 'ArrowLeft') next = (index - 1 + SETTINGS_TABS.length) % SETTINGS_TABS.length;
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = SETTINGS_TABS.length - 1;
+            if (next < 0) return;
+            event.preventDefault();
+            const list = event.currentTarget;
+            store.set({ settingsTab: SETTINGS_TABS[next] });
+            // 等这一轮渲染提交后再移动焦点，避免焦点落到被替换的旧按钮上。
+            window.requestAnimationFrame(() => {
+              const buttons = list.querySelectorAll('[role="tab"]');
+              if (buttons[next] && typeof buttons[next].focus === 'function') buttons[next].focus();
+            });
+          };
+
+          const modelsGroup = h(
+            'div',
+            { className: 'mn-group' },
+            h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionModels'))),
+            h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('modelSectionNote')),
+            models.length
+              ? h(
+                  React.Fragment,
+                  null,
+                  h(
+                    'div',
+                    { className: 'mn-field' },
+                    h(
+                      'select',
+                      {
+                        id: 'mn-model-select',
+                        className: 'mn-select',
+                        'aria-label': t('modelSelectLabel'),
+                        value: pickedModel.id,
+                        onChange: (event) => store.set({ modelPick: event.target.value }),
+                      },
+                      models.map((model) => h('option', { key: model.id, value: model.id }, modelOptionLabel(model))),
+                    ),
+                  ),
+                  h(ModelRow, { key: pickedModel.id, model: pickedModel }),
+                )
+              : h('p', { className: 'mn-hint' }, t('modelEmpty')),
+            h('p', { className: 'mn-hint' }, t('modelsHint')),
+          );
+
+          const recognitionGroup = h(
+            'div',
+            { className: 'mn-group' },
+            h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionRecognition'))),
+            h(
+              'div',
+              { className: 'mn-field' },
+              h('label', { className: 'mn-label', htmlFor: 'mn-cfg-lang' }, t('language')),
+              h(
+                'select',
+                {
+                  id: 'mn-cfg-lang',
+                  className: 'mn-select',
+                  value: draft.language,
+                  disabled: recording,
+                  onChange: (event) => editDraft({ language: event.target.value }),
+                },
+                languages.map((code) => h('option', { key: code, value: code }, langLabel(code))),
+              ),
+            ),
+            h(
+              'div',
+              { className: 'mn-field' },
+              h('label', { className: 'mn-label', htmlFor: 'mn-cfg-chunk' }, t('chunkSeconds')),
+              h('input', {
+                id: 'mn-cfg-chunk',
+                className: 'mn-input',
+                type: 'number',
+                min: 8,
+                max: 60,
+                step: 5,
+                value: String(draft.chunkSeconds),
+                disabled: recording,
+                onChange: (event) => editDraft({ chunkSeconds: Number(event.target.value) || 0 }),
+              }),
+              h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('chunkHint')),
+            ),
+          );
+
+          const storageGroup = h(
+            'div',
+            { className: 'mn-group' },
+            h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionStorage'))),
+            h(
+              'div',
+              { className: 'mn-field' },
+              h('label', { className: 'mn-label', htmlFor: 'mn-cfg-dir' }, t('storageDir')),
+              h(
+                'div',
+                { className: 'mn-field-row' },
+                h('input', {
+                  id: 'mn-cfg-dir',
+                  className: 'mn-input',
+                  type: 'text',
+                  value: draft.storageDir,
+                  spellCheck: false,
+                  placeholder: '~/dsh-meetings',
+                  onChange: (event) => editDraft({ storageDir: event.target.value }),
+                }),
+                h('button', { type: 'button', className: 'mn-btn', 'data-variant': 'outline', 'data-size': 'small', onClick: chooseStorageDir }, t('pickDirectory')),
+              ),
+              h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('storageHint')),
+            ),
+          );
+
+          const captureGroup = h(
+            'div',
+            { className: 'mn-group' },
+            h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionCapture'))),
+            h(
+              'div',
+              { className: 'mn-field' },
+              h(
+                'label',
+                { className: 'mn-switch' },
+                h('input', {
+                  type: 'checkbox',
+                  role: 'switch',
+                  'aria-checked': draft.captureMicrophone ? 'true' : 'false',
+                  checked: !!draft.captureMicrophone,
+                  onChange: (event) => editDraft({ captureMicrophone: event.target.checked }),
+                }),
+                h('span', { className: 'mn-switch-track' }),
+                h('span', null, t('captureMic')),
+              ),
+              h(
+                'label',
+                { className: 'mn-switch', style: { marginTop: '10px' } },
+                h('input', {
+                  type: 'checkbox',
+                  role: 'switch',
+                  'aria-checked': draft.captureSystemAudio ? 'true' : 'false',
+                  checked: !!draft.captureSystemAudio,
+                  onChange: (event) => editDraft({ captureSystemAudio: event.target.checked }),
+                }),
+                h('span', { className: 'mn-switch-track' }),
+                h('span', null, t('captureSystem')),
+              ),
+              h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('captureHint')),
+            ),
+          );
+
+          const detectGroup = h(
+            'div',
+            { className: 'mn-group' },
+            h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionDetect'))),
+            h(
+              'div',
+              { className: 'mn-field' },
+              h(
+                'label',
+                { className: 'mn-switch' },
+                h('input', {
+                  type: 'checkbox',
+                  role: 'switch',
+                  'aria-checked': draft.detectEnabled ? 'true' : 'false',
+                  checked: !!draft.detectEnabled,
+                  onChange: (event) => editDraft({ detectEnabled: event.target.checked }),
+                }),
+                h('span', { className: 'mn-switch-track' }),
+                h('span', null, t('detectSwitchEnabled')),
+              ),
+              h(
+                'label',
+                {
+                  className: 'mn-switch',
+                  style: { marginTop: '10px' },
+                  'data-disabled': draft.detectEnabled ? '0' : '1',
+                },
+                h('input', {
+                  type: 'checkbox',
+                  role: 'switch',
+                  'aria-checked': draft.detectNotify ? 'true' : 'false',
+                  checked: !!draft.detectNotify,
+                  disabled: !draft.detectEnabled,
+                  onChange: (event) => editDraft({ detectNotify: event.target.checked }),
+                }),
+                h('span', { className: 'mn-switch-track' }),
+                h('span', null, t('detectSwitchNotify')),
+              ),
+              h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('detectHint')),
+              detectUnavailable
+                ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectUnavailableHint'))
+                : null,
+              detectError
+                ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, detectError)
+                : null,
+              detectNotifyDenied
+                ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectNotifyDenied'))
+                : null,
+              detectNotifyUnsupported
+                ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectNotifyUnsupported'))
+                : null,
+              h(
+                'div',
+                { style: { marginTop: '12px' } },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'mn-btn',
+                    'data-variant': 'outline',
+                    'data-size': 'small',
+                    disabled: detectNotifyUnsupported,
+                    onClick: () => void sendTestNotification(),
+                  },
+                  t('detectTestNotify'),
+                ),
+              ),
+            ),
+          );
+
+          const activePanel =
+            activeTab === 'record'
+              ? [storageGroup, captureGroup]
+              : activeTab === 'general'
+                ? [detectGroup]
+                : [modelsGroup, recognitionGroup];
+
           return h(
             Modal,
             {
@@ -3441,6 +3723,34 @@ window.__ModuleLoader__.load({
               width: 'min(560px, 100%)',
               onClose: closeSettings,
               closeLabel: t('closeDialog'),
+              tabs: h(
+                'div',
+                {
+                  className: 'mn-tabs mn-modal-tabs',
+                  role: 'tablist',
+                  'aria-label': t('settingsTabsLabel'),
+                  onKeyDown: onTabKeyDown,
+                },
+                SETTINGS_TABS.map((tab) =>
+                  h(
+                    'button',
+                    {
+                      key: tab,
+                      type: 'button',
+                      role: 'tab',
+                      id: `mn-settings-tab-${tab}`,
+                      className: 'mn-tab',
+                      'data-active': activeTab === tab ? '1' : '0',
+                      'aria-selected': activeTab === tab,
+                      'aria-controls': `mn-settings-panel-${tab}`,
+                      tabIndex: activeTab === tab ? 0 : -1,
+                      'data-modal-autofocus': tab === activeTab ? 'true' : undefined,
+                      onClick: () => store.set({ settingsTab: tab }),
+                    },
+                    t(SETTINGS_TAB_LABELS[tab]),
+                  ),
+                ),
+              ),
               footer: h(
                 React.Fragment,
                 null,
@@ -3465,182 +3775,13 @@ window.__ModuleLoader__.load({
             },
             h(
               'div',
-              { className: 'mn-group' },
-              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionModels'))),
-              h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('modelSectionNote')),
-              models.length
-                ? h('div', { className: 'mn-model-list' }, models.map((model) => h(ModelRow, { key: model.id, model })))
-                : h('p', { className: 'mn-hint' }, t('modelEmpty')),
-              h('p', { className: 'mn-hint' }, t('modelsHint')),
-            ),
-            h(
-              'div',
-              { className: 'mn-group' },
-              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionStorage'))),
-              h(
-                'div',
-                { className: 'mn-field' },
-                h('label', { className: 'mn-label', htmlFor: 'mn-cfg-dir' }, t('storageDir')),
-                h(
-                  'div',
-                  { className: 'mn-field-row' },
-                  h('input', {
-                    id: 'mn-cfg-dir',
-                    className: 'mn-input',
-                    type: 'text',
-                    value: draft.storageDir,
-                    spellCheck: false,
-                    placeholder: '~/dsh-meetings',
-                    'data-modal-autofocus': 'true',
-                    onChange: (event) => editDraft({ storageDir: event.target.value }),
-                  }),
-                  h('button', { type: 'button', className: 'mn-btn', 'data-variant': 'outline', 'data-size': 'small', onClick: chooseStorageDir }, t('pickDirectory')),
-                ),
-                h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('storageHint')),
-              ),
-            ),
-            h(
-              'div',
-              { className: 'mn-group' },
-              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionRecognition'))),
-              h(
-                'div',
-                { className: 'mn-field' },
-                h('label', { className: 'mn-label', htmlFor: 'mn-cfg-lang' }, t('language')),
-                h(
-                  'select',
-                  {
-                    id: 'mn-cfg-lang',
-                    className: 'mn-select',
-                    value: draft.language,
-                    disabled: recording,
-                    onChange: (event) => editDraft({ language: event.target.value }),
-                  },
-                  languages.map((code) => h('option', { key: code, value: code }, langLabel(code))),
-                ),
-              ),
-              h(
-                'div',
-                { className: 'mn-field' },
-                h('label', { className: 'mn-label', htmlFor: 'mn-cfg-chunk' }, t('chunkSeconds')),
-                h('input', {
-                  id: 'mn-cfg-chunk',
-                  className: 'mn-input',
-                  type: 'number',
-                  min: 8,
-                  max: 60,
-                  step: 5,
-                  value: String(draft.chunkSeconds),
-                  disabled: recording,
-                  onChange: (event) => editDraft({ chunkSeconds: Number(event.target.value) || 0 }),
-                }),
-                h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('chunkHint')),
-              ),
-            ),
-            h(
-              'div',
-              { className: 'mn-group' },
-              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionCapture'))),
-              h(
-                'div',
-                { className: 'mn-field' },
-                h(
-                  'label',
-                  { className: 'mn-switch' },
-                  h('input', {
-                    type: 'checkbox',
-                    role: 'switch',
-                    'aria-checked': draft.captureMicrophone ? 'true' : 'false',
-                    checked: !!draft.captureMicrophone,
-                    onChange: (event) => editDraft({ captureMicrophone: event.target.checked }),
-                  }),
-                  h('span', { className: 'mn-switch-track' }),
-                  h('span', null, t('captureMic')),
-                ),
-                h(
-                  'label',
-                  { className: 'mn-switch', style: { marginTop: '10px' } },
-                  h('input', {
-                    type: 'checkbox',
-                    role: 'switch',
-                    'aria-checked': draft.captureSystemAudio ? 'true' : 'false',
-                    checked: !!draft.captureSystemAudio,
-                    onChange: (event) => editDraft({ captureSystemAudio: event.target.checked }),
-                  }),
-                  h('span', { className: 'mn-switch-track' }),
-                  h('span', null, t('captureSystem')),
-                ),
-                h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('captureHint')),
-              ),
-            ),
-            h(
-              'div',
-              { className: 'mn-group' },
-              h('div', { className: 'mn-group-head' }, h('h3', null, t('sectionDetect'))),
-              h(
-                'div',
-                { className: 'mn-field' },
-                h(
-                  'label',
-                  { className: 'mn-switch' },
-                  h('input', {
-                    type: 'checkbox',
-                    role: 'switch',
-                    'aria-checked': draft.detectEnabled ? 'true' : 'false',
-                    checked: !!draft.detectEnabled,
-                    onChange: (event) => editDraft({ detectEnabled: event.target.checked }),
-                  }),
-                  h('span', { className: 'mn-switch-track' }),
-                  h('span', null, t('detectSwitchEnabled')),
-                ),
-                h(
-                  'label',
-                  {
-                    className: 'mn-switch',
-                    style: { marginTop: '10px' },
-                    'data-disabled': draft.detectEnabled ? '0' : '1',
-                  },
-                  h('input', {
-                    type: 'checkbox',
-                    role: 'switch',
-                    'aria-checked': draft.detectNotify ? 'true' : 'false',
-                    checked: !!draft.detectNotify,
-                    disabled: !draft.detectEnabled,
-                    onChange: (event) => editDraft({ detectNotify: event.target.checked }),
-                  }),
-                  h('span', { className: 'mn-switch-track' }),
-                  h('span', null, t('detectSwitchNotify')),
-                ),
-                h('p', { className: 'mn-hint', style: { marginTop: '10px' } }, t('detectHint')),
-                detectUnavailable
-                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectUnavailableHint'))
-                  : null,
-                detectError
-                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, detectError)
-                  : null,
-                detectNotifyDenied
-                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectNotifyDenied'))
-                  : null,
-                detectNotifyUnsupported
-                  ? h('p', { className: 'mn-hint', style: { marginTop: '6px' } }, t('detectNotifyUnsupported'))
-                  : null,
-                h(
-                  'div',
-                  { style: { marginTop: '12px' } },
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      className: 'mn-btn',
-                      'data-variant': 'outline',
-                      'data-size': 'small',
-                      disabled: detectNotifyUnsupported,
-                      onClick: () => void sendTestNotification(),
-                    },
-                    t('detectTestNotify'),
-                  ),
-                ),
-              ),
+              {
+                className: 'mn-tabpanel',
+                role: 'tabpanel',
+                id: `mn-settings-panel-${activeTab}`,
+                'aria-labelledby': `mn-settings-tab-${activeTab}`,
+              },
+              ...activePanel,
             ),
           );
         }

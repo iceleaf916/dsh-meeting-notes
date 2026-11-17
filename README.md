@@ -2,7 +2,7 @@
 
 一个 DSH Web 插件：左侧栏「会议记录」入口，把「系统声音 + 麦克风」混音录下来，用本地语音识别模型（默认 SenseVoiceSmall，也可切换本插件自带的 Qwen3-ASR）或硅基流动云端模型转成中文文稿（可夹少量英文），需要时一键把转写交给 DSH 大模型整理成会议纪要，并在左侧工作区生成一条可继续聊天的会话记录。
 
-当前版本：**v0.7.1**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
+当前版本：**v0.7.2**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
 
 ## 功能
 
@@ -11,12 +11,12 @@
 - 两种转写模式：
   - **录音结束后转写**（默认）：停止后后台整段转写，录音期间同时预热本地模型；
   - **实时转写**：录音中按静音点自动切段识别，边说边出字。
-- 识别默认由本插件自带的两个本地引擎完成，**不依赖 DSH 的语音输入插件**，完全本机离线、不联网；也可以切换到硅基流动的云端模型（需要 API 密钥，音频会上传到硅基流动）。本地模型首次使用前需下载到本机，下载、取消与模型切换都在设置页的**识别模型列表**里完成。
+- 识别默认由本插件自带的两个本地引擎完成，**不依赖 DSH 的语音输入插件**，完全本机离线、不联网；也可以切换到硅基流动的云端模型（需要 API 密钥，音频会上传到硅基流动）。本地模型首次使用前需下载到本机，下载、取消与模型切换都在设置页「识别模型」的下拉与详情卡里完成。
 - 自带两个本地模型与一个云端模型：
   - **SenseVoiceSmall (INT8)**：本插件自带 provider（`sensevoice.js` + `asr-worker.js`），支持实时转写，速度快；默认复用 DSH 语音插件已下载的模型目录（若存在），避免重复下载约 230 MB 的模型文件；
   - **Qwen3-ASR-0.6B (INT8)**：本插件自带 provider（`qwen3.js` + `asr-worker.js`，依赖 `sherpa-onnx-node`），约 1.15 GB，中文/方言/中英混说更稳，但非流式、单次窗口约 30 秒，更适合「结束后转写」；
-  - **XingChenASR-V3.2-Ultra（硅基流动云端）**：本插件自带 provider（`xingchen.js`），把切好的音频上传到硅基流动转写，中/英/方言混说更稳，**无需下载模型**；需要 API 密钥（直接在该模型行内填写，或环境变量 `SILICONFLOW_API_KEY`），当前该模型免费；非流式、单段上限 50 MB，**不建议开启实时转写**。
-- 模型列表按 provider 动态生成：DSH 语音输入插件启用时，它的 provider 会作为额外来源合并进列表并标注「插件自带」/「DSH 语音插件」；列表可分别下载、切换与查看准备进度。
+  - **XingChenASR-V3.2-Ultra（硅基流动云端）**：本插件自带 provider（`xingchen.js`），把切好的音频上传到硅基流动转写，中/英/方言混说更稳，**无需下载模型**；需要 API 密钥（直接在该模型详情卡里填写，或环境变量 `SILICONFLOW_API_KEY`），当前该模型免费；非流式、单段上限 50 MB，**不建议开启实时转写**。
+- 模型下拉按 provider 动态生成：DSH 语音输入插件启用时，它的 provider 会作为额外来源合并进下拉并标注「插件自带」/「DSH 语音插件」；选中某个模型即可下载、切换与查看准备进度。
 - 语言默认 `zh`，中文为主；SenseVoice 自带中英混说能力，英文术语、产品名会原样保留；云端模型只看 `auto` / `zh` / `en` / `yue`（模型自身按中英与方言自动判断，方言语音输出标准中文）。
 - **会议提醒**（macOS 14.2+ / Linux，默认开启）：后台检测腾讯会议、企业微信内置会议是否真的开始/结束（只看它们对麦克风、扬声器的占用状态，不读音频内容、不自动录音）；开始时页面内弹出「要开始记录吗」建议，结束时弹出「要结束记录吗」建议，同时以 **DeepSeek Harness** 身份发一条系统通知。同意即执行，忽略或超时后 30 分钟内不再打扰。检测订阅常驻在插件启动作用域，只要 DSH 在运行（页面可最小化、可在其他对话）就会提醒。
 - 音频与文稿默认存 `~/dsh-meetings/`，可在界面里换目录；每个会议一个目录，结构见下。
@@ -30,7 +30,7 @@
 - 本地识别不依赖任何 DSH 可选插件：两个引擎（SenseVoice / Qwen3-ASR）都由本插件自带，模型用 `sherpa-onnx-node`（`^2.0.1`，含 macOS arm64、Linux x64 / arm64 的预编译 ONNX 运行时）在本机推理。
 - 云端识别只依赖网络与硅基流动 API 密钥（`https://api.siliconflow.cn/v1`），不需要 `sherpa-onnx-node`、不下载模型；单段音频上限 50 MB / 约 1 小时，本插件按 50 秒切块。
 - SenseVoice 模型默认放在 `~/.dsh/speech-to-text/sensevoice/models/sensevoice-onnx/`（复用 DSH 语音插件已下载的目录；可用 `sensevoiceModelDir` 配置覆盖），下载源为 Hugging Face / HF-Mirror，文件锁定上游 commit 与 sha256；Qwen3-ASR 模型放在 `~/.dsh/speech-to-text/qwen3-asr-0.6b/`（可用 `qwen3ModelDir` 配置覆盖），下载源为 ModelScope（国内推荐）或 HF-Mirror。
-- DSH 语音输入插件不是必需项：启用后它的 provider 会作为额外来源合并进模型列表，供已有用户复用；停用时模型列表仍由插件自带引擎填充。
+- DSH 语音输入插件不是必需项：启用后它的 provider 会作为额外来源合并进模型下拉，供已有用户复用；停用时模型下拉仍由插件自带引擎填充。
 - 录制：macOS 需要 13+（ScreenCaptureKit 音频采集）；Linux 需要 PipeWire 或 PulseAudio，以及 `pactl` / `parec`（Debian / UOS 上由 `pulseaudio-utils` 提供）。会议检测：macOS 需要 14.2+（CoreAudio 进程对象 API）；Linux 用 `ps` 与 `pactl`，不需要额外权限，也不依赖 X11 窗口标题，Wayland 下可用。
 - macOS 首次使用由插件调用 `swiftc` 编译 `recorder/`（Xcode Command Line Tools，约 10–30 秒）；Linux 不需要编译，直接调用系统的 `parec`。
 - 会议检测不读音频内容、不截屏：macOS 上不需要 TCC 权限，Linux 上只读取进程名与 PulseAudio 的流元数据。系统通知复用 DeepSeek Harness 的通知授权，首次发通知时系统会询问是否允许。
@@ -46,7 +46,7 @@ dsh plugin --profile web add @iceleaf/dsh-meeting-notes
 # Desktop 版把 web 换成 desktop
 ```
 
-装完重启 DSH（或刷新页面），左侧栏出现「会议记录」。macOS 首次录音会自动调用 `swiftc` 编译辅助程序（需 Xcode Command Line Tools）；Linux 直接使用系统的 `parec`。首次识别需在设置页「识别模型」里下载模型；用云端模型则在该模型行内填硅基流动 API 密钥（或设 `SILICONFLOW_API_KEY` 环境变量），无需下载。
+装完重启 DSH（或刷新页面），左侧栏出现「会议记录」。macOS 首次录音会自动调用 `swiftc` 编译辅助程序（需 Xcode Command Line Tools）；Linux 直接使用系统的 `parec`。首次识别需在设置页「识别模型」下拉里选中模型并下载；用云端模型则在该模型详情卡里填硅基流动 API 密钥（或设 `SILICONFLOW_API_KEY` 环境变量），无需下载。
 
 Linux 上若提示缺少 `pactl` / `parec`，安装系统包即可（Debian / UOS）：
 
@@ -63,7 +63,7 @@ cd dsh-meeting-notes && npm install   # sherpa-onnx-node + 测试用的 react/js
 
 然后在 DSH 里把仓库目录装成本地 bundle（Plugin Manager 选目录，或让 Agent 执行 `plugin_manager install_bundle`，目标是该目录绝对路径），刷新页面后从左侧「会议记录」进入。
 
-macOS 首次录音会自动编译辅助程序（Linux 无需编译）；首次识别若模型未就绪，打开设置页「识别模型」点「下载并准备」，选择下载源（自动 / ModelScope / Hugging Face / HF-Mirror）后等待进度完成即可。Qwen3-ASR 首次下载约 1.15 GB，SenseVoice 约 230 MB；ModelScope 在国内通常比 Hugging Face 快一个数量级。
+macOS 首次录音会自动编译辅助程序（Linux 无需编译）；首次识别若模型未就绪，打开设置页「识别模型」，从下拉里选中该模型后点「下载并准备」，选择下载源（自动 / ModelScope / Hugging Face / HF-Mirror）后等待进度完成即可。Qwen3-ASR 首次下载约 1.15 GB，SenseVoice 约 230 MB；ModelScope 在国内通常比 Hugging Face 快一个数量级。
 
 ## 存储结构
 
@@ -116,15 +116,15 @@ Host 侧对上层只暴露 `platformInfo()` / `recorderState()` / `ensureRecorde
 
 ### Qwen3-ASR provider（`qwen3.js` + `asr-worker.js`）
 
-- provider id `qwen3-asr-0.6b`，与本插件自带的 SenseVoice provider 并列出现在模型列表；DSH 语音输入插件启用时额外注册进 `ctx.speechToText` 供其复用，仅共享、不依赖。
+- provider id `qwen3-asr-0.6b`，与本插件自带的 SenseVoice provider 并列出现在模型下拉；DSH 语音输入插件启用时额外注册进 `ctx.speechToText` 供其复用，仅共享、不依赖。
 - 模型推理放在 `worker_threads` 里（`asr-worker.js` 用 `sherpa-onnx-node` 的 `OfflineRecognizer`），主进程只做 WAV 解析与队列，避免几秒级推理卡住 DSH UI 和 HTTP 接口；空闲 300 秒后释放 worker 回到 `standby`，录音时自动重新加载。
 - 下载：6 个文件顺序下载（conv_frontend / encoder / decoder / tokenizer 六个小文件），已有同尺寸文件直接复用，写 `.part` 临时文件后原子改名；失败按 DNS / 超时 / 证书 / HTTP / 完整性 / 磁盘归类，并自动切换下一个下载源。
-- 准备状态与 DSH 内置 provider 保持同一形状（`phase` / `steps` / `download` / `completedBytes` / `totalBytes`），所以设置页模型列表与进度条无需为该模型特殊处理。
+- 准备状态与 DSH 内置 provider 保持同一形状（`phase` / `steps` / `download` / `completedBytes` / `totalBytes`），所以设置页模型下拉与进度条无需为该模型特殊处理。
 - 语言集合 `auto/zh/en/yue/ja/ko`；本插件在 UI 上标注「实时转写延迟较高」，建议配合「结束后转写」使用。
 
 ### 云端 provider（`xingchen.js`）
 
-- provider id `xingchen-asr`，`location: 'cloud'`，与其他模型并列出现在设置页；不需要下载与准备，`preparation` 只看有没有密钥：有则 `ready`，没有则 `unprepare` 并在模型行提示「未配置硅基流动 API 密钥」。
+- provider id `xingchen-asr`，`location: 'cloud'`，与其他模型并列出现在设置页；不需要下载与准备，`preparation` 只看有没有密钥：有则 `ready`，没有则 `unprepare` 并在详情卡提示「未配置硅基流动 API 密钥」。
 - 密钥输入框就在云端模型行内（「未配置密钥」提示下方），保存设置时随 `/config` 提交；密钥优先取插件配置 `siliconflowApiKey`，为空时回退 `SILICONFLOW_API_KEY` 环境变量；只存在 Host 侧配置里，不写进 meeting.json，也不回显到 `/state` 以外的日志。
 - 转写走 `POST {baseUrl}/audio/transcriptions`（默认 `https://api.siliconflow.cn/v1`），multipart 只带 `file` 与 `model`（接口未公开 `language` 参数，模型自动判断中英与方言）；返回 `{ duration, text }`，`audioSeconds` 优先用 `duration`。
 - 错误按状态码归类为「密钥无效 / 余额不足 / 接口或模型不存在 / 请求过于频繁 / 服务不可用 / 网络错误 / 超时」，可重试的错误自动重试一次（间隔 800ms）；取消（AbortSignal）不重试。
@@ -179,7 +179,7 @@ Host 侧对上层只暴露 `platformInfo()` / `recorderState()` / `ensureRecorde
 
 - `recorder/test.sh`：macOS 录音辅助程序自测（参数校验 / 混音采样 / EOF / SIGINT）。
 - `test/smoke.mjs`：客户端 UI 冒烟（真实 React + jsdom，stub fetch，覆盖首屏、开始录音、生成纪要跳转、设置弹窗与标签切换）。
-- `test/models.mjs`：设置页模型列表交互（多模型列表、切换模型、下载进度、取消准备）。
+- `test/models.mjs`：设置页与顶栏模型下拉交互（状态文案、详情卡、切换模型、下载进度、取消准备）。
 - `test/xingchen.mjs`：硅基流动云端 provider 纯逻辑测试（元数据、无密钥状态、multipart 字段、时长回退、错误归类与重试、取消不重试），不联网。
 - `test/qwen3.mjs`：Qwen3 provider 纯逻辑测试（WAV 解析、切块上限、下载错误归类、provider 元数据与未准备状态），不联网、不加载模型。
 - `test/registry.mjs`：ASR 门面纯逻辑测试（自带 / DSH provider 合并去重与来源标注、resolve / transcribe / prepare / cancel 路由、失败占位、DSH 未启用时的选择回退）。
