@@ -2,6 +2,8 @@
 
 一个 DSH Web 插件：左侧栏「会议记录」入口，把「系统声音 + 麦克风」混音录下来，用本地语音识别模型（默认 SenseVoiceSmall，也可切换本插件自带的 Qwen3-ASR）或硅基流动云端模型转成中文文稿（可夹少量英文），需要时一键把转写交给 DSH 大模型整理成会议纪要，并在左侧工作区生成一条可继续聊天的会话记录。
 
+![会议记录主界面：会议检测建议、录音面板与麦克风/系统声音电平、会议列表、文稿与纪要切换](https://raw.githubusercontent.com/iceleaf916/dsh-meeting-notes/HEAD/assets/screenshot-main.png)
+
 当前版本：**v0.7.2**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
 
 ## 功能
@@ -188,6 +190,7 @@ Host 侧对上层只暴露 `platformInfo()` / `recorderState()` / `ensureRecorde
 - `test/detect.test.mjs`：会议检测纯逻辑测试（状态机去抖/宽限/只听、建议生成与过期、接受即开始/结束录音、忽略冷却、配置关闭不启动、去抖参数热更新），不编译 Swift、不弹通知。
 - UI 测试都从仓库根目录解析 `react` / `react-dom` / `jsdom`，直接 `node test/smoke.mjs`、`node test/models.mjs`、`node test/qwen3.mjs`、`node test/xingchen.mjs`、`node test/registry.mjs`、`node test/sensevoice.mjs`、`node test/linux.test.mjs` 运行。
 - `test/preview.mjs`：视觉预览（同一套 jsdom + 真实 React，把主界面几个状态渲染成静态 HTML 到 `/tmp/mn-preview`，再用无头 Chrome 截图；需带 `--virtual-time-budget` 等动画结束）。
+- `assets/screenshot-main.png`（README 主截图）就是这套预览渲染出来的：`cd test && node preview.mjs /tmp/mn-shot`，再对 `main-transcript-light.html` 用 `--force-device-scale-factor=2 --window-size=1280,820` 截图。改 UI 后同步重截，不要手改图片。
 
 ## 许可
 
