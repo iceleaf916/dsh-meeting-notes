@@ -77,7 +77,7 @@ const xingchen = {
   realtime: false,
   preparation: {
     phase: 'unprepare',
-    message: '未配置硅基流动 API 密钥：请在「设置 → 识别」中填写后使用云端识别。',
+    message: '未配置硅基流动 API 密钥：请在模型下方的输入框中填写后使用云端识别。',
   },
   selected: false,
   ready: false,
@@ -289,9 +289,9 @@ ok(!rowButton('xingchen-asr', '下载并准备'), '云端模型不显示「下�
 ok((row('xingchen-asr')?.textContent || '').includes('未配置硅基流动 API 密钥'), '云端模型提示未配置密钥');
 ok((row('xingchen-asr')?.textContent || '').includes('不建议开启实时转写'), '云端模型说明不建议实时转写');
 
-// 识别分组里的密钥输入框：密码形态、说明提到环境变量回退
-const keyInput = panel().querySelector('#mn-cfg-siliconflow-key');
-ok(!!keyInput, '设置页有硅基流动 API 密钥输入框');
+// 云端模型行内的密钥输入框：密码形态、说明提到环境变量回退
+const keyInput = panel().querySelector('[data-field="siliconflow-key"]');
+ok(!!keyInput, '云端模型行内有硅基流动 API 密钥输入框');
 ok(keyInput?.getAttribute('type') === 'password', '密钥输入框以密码形式展示');
 ok((panel()?.textContent || '').includes('SILICONFLOW_API_KEY'), '密钥说明提到环境变量回退');
 

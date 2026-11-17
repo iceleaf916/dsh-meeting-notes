@@ -19,7 +19,7 @@ const REQUEST_TIMEOUT_MS = 120_000;
 const RETRY_DELAY_MS = 800;
 // 没有密钥时模型行的说明（phase=unprepare，不显示「准备失败」）。
 export const XINGCHEN_NO_KEY_MESSAGE =
-  '未配置硅基流动 API 密钥：请在「设置 → 识别」中填写后使用云端识别。';
+  '未配置硅基流动 API 密钥：请在模型下方的输入框中填写后使用云端识别。';
 
 /** 配置值优先，其次环境变量；都为空时返回空串。 */
 export function resolveXingchenApiKey(value) {

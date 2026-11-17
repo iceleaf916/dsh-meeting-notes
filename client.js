@@ -753,6 +753,8 @@ window.__ModuleLoader__.load({
 .mn-model-name b{font-weight:600}
 .mn-tag{padding:1px 8px;border-radius:999px;background:var(--mn-module);color:var(--mn-muted);font-size:11px;line-height:17px;font-weight:500}
 .mn-model-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;line-height:18px;color:var(--mn-muted);flex-wrap:wrap}
+.mn-model-key{margin:2px 0 10px}
+.mn-model-key .mn-hint{color:var(--mn-muted)}
 .mn-model-estimate{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;line-height:18px;color:var(--mn-muted)}
 .mn-model-progress{display:flex;flex-direction:column;gap:5px}
 .mn-progress{height:4px;border-radius:999px;background:var(--mn-skel);overflow:hidden}
@@ -3081,6 +3083,9 @@ window.__ModuleLoader__.load({
 
         // 设置页里的单个模型行：下载/取消/切换都集中在这里，未来新增 ASR provider 自动出现。
         function ModelRow({ model }) {
+          const settings = useStore();
+          const draft = settings.cfgDraft || {};
+          const recording = !!settings.state?.recording?.active;
           const preparation = model.preparation || {};
           const phase = preparation.phase || (model.ready ? 'ready' : 'unprepare');
           const sources = Array.isArray(model.downloadSources) ? model.downloadSources : [];
@@ -3180,6 +3185,31 @@ window.__ModuleLoader__.load({
             // 云端模型未填密钥时 phase=unprepare，没有下载步骤，直接说明缺什么。
             !failed && preparation.message
               ? h('p', { className: 'mn-hint', 'data-hint': 'preparation' }, preparation.message)
+              : null,
+            // 云端模型的密钥就配在它自己的行里：看到「未配置密钥」时不用再往下找设置项。
+            model.location === 'cloud'
+              ? h(
+                  'div',
+                  { className: 'mn-field mn-model-key' },
+                  h(
+                    'label',
+                    { className: 'mn-label', htmlFor: `mn-model-key-${model.id}` },
+                    t('siliconflowApiKey'),
+                  ),
+                  h('input', {
+                    id: `mn-model-key-${model.id}`,
+                    className: 'mn-input',
+                    type: 'password',
+                    autoComplete: 'off',
+                    spellCheck: false,
+                    placeholder: t('siliconflowApiKeyPlaceholder'),
+                    value: draft.siliconflowApiKey || '',
+                    disabled: recording,
+                    'data-field': 'siliconflow-key',
+                    onChange: (event) => editDraft({ siliconflowApiKey: event.target.value }),
+                  }),
+                  h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('siliconflowApiKeyHint')),
+                )
               : null,
             phase === 'downloading'
               ? h(
@@ -3505,31 +3535,6 @@ window.__ModuleLoader__.load({
                   onChange: (event) => editDraft({ chunkSeconds: Number(event.target.value) || 0 }),
                 }),
                 h('p', { className: 'mn-hint', style: { marginTop: 0 } }, t('chunkHint')),
-              ),
-              h(
-                'div',
-                { className: 'mn-field' },
-                h(
-                  'label',
-                  { className: 'mn-label', htmlFor: 'mn-cfg-siliconflow-key' },
-                  t('siliconflowApiKey'),
-                ),
-                h('input', {
-                  id: 'mn-cfg-siliconflow-key',
-                  className: 'mn-input',
-                  type: 'password',
-                  autoComplete: 'off',
-                  spellCheck: false,
-                  placeholder: t('siliconflowApiKeyPlaceholder'),
-                  value: draft.siliconflowApiKey || '',
-                  disabled: recording,
-                  onChange: (event) => editDraft({ siliconflowApiKey: event.target.value }),
-                }),
-                h(
-                  'p',
-                  { className: 'mn-hint', style: { marginTop: 0 } },
-                  t('siliconflowApiKeyHint'),
-                ),
               ),
             ),
             h(

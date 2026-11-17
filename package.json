@@ -1,6 +1,6 @@
 {
   "name": "@iceleaf/dsh-meeting-notes",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "type": "module",
   "description": "Meeting recorder and transcriber for DeepSeek Harness: system audio + mic mixing, local or SiliconFlow cloud ASR, one-click minutes",
   "exports": {

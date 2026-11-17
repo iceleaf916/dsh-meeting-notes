@@ -2,7 +2,7 @@
 
 一个 DSH Web 插件：左侧栏「会议记录」入口，把「系统声音 + 麦克风」混音录下来，用本地语音识别模型（默认 SenseVoiceSmall，也可切换本插件自带的 Qwen3-ASR）或硅基流动云端模型转成中文文稿（可夹少量英文），需要时一键把转写交给 DSH 大模型整理成会议纪要，并在左侧工作区生成一条可继续聊天的会话记录。
 
-当前版本：**v0.7.0**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
+当前版本：**v0.7.1**（详见 [CHANGELOG.md](CHANGELOG.md)）；npm 包：`@iceleaf/dsh-meeting-notes`。
 
 ## 功能
 
@@ -15,7 +15,7 @@
 - 自带两个本地模型与一个云端模型：
   - **SenseVoiceSmall (INT8)**：本插件自带 provider（`sensevoice.js` + `asr-worker.js`），支持实时转写，速度快；默认复用 DSH 语音插件已下载的模型目录（若存在），避免重复下载约 230 MB 的模型文件；
   - **Qwen3-ASR-0.6B (INT8)**：本插件自带 provider（`qwen3.js` + `asr-worker.js`，依赖 `sherpa-onnx-node`），约 1.15 GB，中文/方言/中英混说更稳，但非流式、单次窗口约 30 秒，更适合「结束后转写」；
-  - **XingChenASR-V3.2-Ultra（硅基流动云端）**：本插件自带 provider（`xingchen.js`），把切好的音频上传到硅基流动转写，中/英/方言混说更稳，**无需下载模型**；需要 API 密钥（设置页「识别」分组填写，或环境变量 `SILICONFLOW_API_KEY`），当前该模型免费；非流式、单段上限 50 MB，**不建议开启实时转写**。
+  - **XingChenASR-V3.2-Ultra（硅基流动云端）**：本插件自带 provider（`xingchen.js`），把切好的音频上传到硅基流动转写，中/英/方言混说更稳，**无需下载模型**；需要 API 密钥（直接在该模型行内填写，或环境变量 `SILICONFLOW_API_KEY`），当前该模型免费；非流式、单段上限 50 MB，**不建议开启实时转写**。
 - 模型列表按 provider 动态生成：DSH 语音输入插件启用时，它的 provider 会作为额外来源合并进列表并标注「插件自带」/「DSH 语音插件」；列表可分别下载、切换与查看准备进度。
 - 语言默认 `zh`，中文为主；SenseVoice 自带中英混说能力，英文术语、产品名会原样保留；云端模型只看 `auto` / `zh` / `en` / `yue`（模型自身按中英与方言自动判断，方言语音输出标准中文）。
 - **会议提醒**（macOS 14.2+ / Linux，默认开启）：后台检测腾讯会议、企业微信内置会议是否真的开始/结束（只看它们对麦克风、扬声器的占用状态，不读音频内容、不自动录音）；开始时页面内弹出「要开始记录吗」建议，结束时弹出「要结束记录吗」建议，同时以 **DeepSeek Harness** 身份发一条系统通知。同意即执行，忽略或超时后 30 分钟内不再打扰。检测订阅常驻在插件启动作用域，只要 DSH 在运行（页面可最小化、可在其他对话）就会提醒。
@@ -46,7 +46,7 @@ dsh plugin --profile web add @iceleaf/dsh-meeting-notes
 # Desktop 版把 web 换成 desktop
 ```
 
-装完重启 DSH（或刷新页面），左侧栏出现「会议记录」。macOS 首次录音会自动调用 `swiftc` 编译辅助程序（需 Xcode Command Line Tools）；Linux 直接使用系统的 `parec`。首次识别需在设置页「识别模型」里下载模型；用云端模型则在设置页「识别」里填硅基流动 API 密钥（或设 `SILICONFLOW_API_KEY` 环境变量），无需下载。
+装完重启 DSH（或刷新页面），左侧栏出现「会议记录」。macOS 首次录音会自动调用 `swiftc` 编译辅助程序（需 Xcode Command Line Tools）；Linux 直接使用系统的 `parec`。首次识别需在设置页「识别模型」里下载模型；用云端模型则在该模型行内填硅基流动 API 密钥（或设 `SILICONFLOW_API_KEY` 环境变量），无需下载。
 
 Linux 上若提示缺少 `pactl` / `parec`，安装系统包即可（Debian / UOS）：
 
@@ -125,7 +125,7 @@ Host 侧对上层只暴露 `platformInfo()` / `recorderState()` / `ensureRecorde
 ### 云端 provider（`xingchen.js`）
 
 - provider id `xingchen-asr`，`location: 'cloud'`，与其他模型并列出现在设置页；不需要下载与准备，`preparation` 只看有没有密钥：有则 `ready`，没有则 `unprepare` 并在模型行提示「未配置硅基流动 API 密钥」。
-- 密钥优先取插件配置 `siliconflowApiKey`，为空时回退 `SILICONFLOW_API_KEY` 环境变量；只存在 Host 侧配置里，不写进 meeting.json，也不回显到 `/state` 以外的日志。
+- 密钥输入框就在云端模型行内（「未配置密钥」提示下方），保存设置时随 `/config` 提交；密钥优先取插件配置 `siliconflowApiKey`，为空时回退 `SILICONFLOW_API_KEY` 环境变量；只存在 Host 侧配置里，不写进 meeting.json，也不回显到 `/state` 以外的日志。
 - 转写走 `POST {baseUrl}/audio/transcriptions`（默认 `https://api.siliconflow.cn/v1`），multipart 只带 `file` 与 `model`（接口未公开 `language` 参数，模型自动判断中英与方言）；返回 `{ duration, text }`，`audioSeconds` 优先用 `duration`。
 - 错误按状态码归类为「密钥无效 / 余额不足 / 接口或模型不存在 / 请求过于频繁 / 服务不可用 / 网络错误 / 超时」，可重试的错误自动重试一次（间隔 800ms）；取消（AbortSignal）不重试。
 - 单段上限 `maxChunkSeconds: 50`（与 `asr.js` 的硬上限一致），`realtime: false`：录音中的实时分段延迟高、且会重复上传，设置页与录音页都会提示**不建议开启实时转写**，建议用默认的「录音结束后转写」。
